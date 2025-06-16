@@ -301,3 +301,7 @@ We welcome contributions! Please feel free to submit a Pull Request.
 ## Support
 
 For questions and issues, please open an issue in this repository.
+
+### Generate Message API
+
+The `/api/generate-message` endpoint creates short communications using OpenAI. Provide a JSON body with fields like `goal`, `representative`, `organization`, and optional properties such as `reference`, `components`, `tone`, `channel`, `audience`, and `templateName`. You can also pass `?template=myTemplate` as a query parameter to select a registered template.

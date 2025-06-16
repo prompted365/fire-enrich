@@ -78,3 +78,17 @@ export interface EnrichmentSession {
   status: 'active' | 'paused' | 'cancelled' | 'completed';
   startedAt: Date;
 }
+
+export interface MessageParams {
+  reference?: string;
+  goal: string;
+  representative: string;
+  organization: string;
+  components?: string[];
+  tone?: string;
+  channel?: string;
+  medium?: string;
+  audience?: string;
+  criticalityLevel?: string;
+  templateName?: string;
+}

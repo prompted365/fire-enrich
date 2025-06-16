@@ -1,7 +1,8 @@
 import OpenAI from 'openai';
 import { z } from 'zod';
 import { zodResponseFormat } from 'openai/helpers/zod';
-import type { EnrichmentField, EnrichmentResult } from '../types';
+import type { EnrichmentField, EnrichmentResult, MessageParams } from '../types';
+import { MESSAGE_TEMPLATES } from '../templates/message-templates';
 
 export class OpenAIService {
   private client: OpenAI;
@@ -855,5 +856,38 @@ Generate new search queries to find: ${targetField}`,
       console.error('Query generation error:', error);
       return [];
     }
+  }
+
+  async generateMessage(params: MessageParams): Promise<string> {
+    const {
+      reference = '',
+      goal,
+      representative,
+      organization,
+      components = [],
+      tone = 'neutral',
+      channel = 'email',
+      medium = 'text',
+      audience = 'general',
+      criticalityLevel = 'normal',
+      templateName = 'default',
+    } = params;
+
+    const template = MESSAGE_TEMPLATES[templateName] || MESSAGE_TEMPLATES.default;
+    const rendered = template.replace(/{{(.*?)}}/g, (_, key) => {
+      const value = (params as Record<string, unknown>)[key.trim()];
+      if (Array.isArray(value)) return value.join(', ');
+      return value !== undefined ? String(value) : '';
+    });
+
+    const response = await this.client.chat.completions.create({
+      model: 'gpt-4o',
+      messages: [
+        { role: 'system', content: 'You craft short communications based on provided context.' },
+        { role: 'user', content: rendered },
+      ],
+    });
+
+    return response.choices[0].message.content || '';
   }
 }
