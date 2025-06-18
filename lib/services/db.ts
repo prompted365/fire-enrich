@@ -130,3 +130,67 @@ export async function updateSessionStatus(sessionId: string, status: EnrichmentS
     throw new Error('Database not initialized');
   }
 }
+
+// ------------------------------- Retrieval Helpers -------------------------------
+// These helpers fetch session metadata and paginated row results. They mirror the
+// save/update functions above but in reverse. In production a caching layer would
+// likely sit in front; for now we directly query the database on each request.
+
+export async function getSessionMetadata(sessionId: string): Promise<Omit<EnrichmentSession, 'results'> | null> {
+  if (pgPool) {
+    const res = await pgPool.query(
+      'SELECT id, total_rows, processed_rows, status, started_at FROM enrichment_sessions WHERE id = $1',
+      [sessionId]
+    );
+    if (res.rowCount === 0) return null;
+    const row = res.rows[0];
+    return {
+      id: row.id,
+      totalRows: row.total_rows,
+      processedRows: row.processed_rows,
+      status: row.status,
+      startedAt: row.started_at,
+    };
+  } else if (cassandra) {
+    const result = await cassandra.execute(
+      'SELECT id, total_rows, processed_rows, status, started_at FROM enrichment_sessions WHERE id = ?',
+      [sessionId],
+      { prepare: true }
+    );
+    if (result.rowLength === 0) return null;
+    const row = result.rows[0] as any;
+    return {
+      id: row.id,
+      totalRows: row.total_rows,
+      processedRows: row.processed_rows,
+      status: row.status,
+      startedAt: row.started_at,
+    };
+  }
+
+  throw new Error('Database not initialized');
+}
+
+export async function getSessionResults(
+  sessionId: string,
+  offset: number = 0,
+  limit: number = 50
+): Promise<RowEnrichmentResult[]> {
+  if (pgPool) {
+    const res = await pgPool.query(
+      'SELECT data FROM enrichment_results WHERE session_id = $1 ORDER BY row_index OFFSET $2 LIMIT $3',
+      [sessionId, offset, limit]
+    );
+    return res.rows.map(r => r.data as RowEnrichmentResult);
+  } else if (cassandra) {
+    const result = await cassandra.execute(
+      'SELECT data FROM enrichment_results WHERE session_id = ?',
+      [sessionId],
+      { prepare: true }
+    );
+    const all = result.rows.map(r => (typeof r.data === 'string' ? JSON.parse(r.data) : r.data));
+    return all.slice(offset, offset + limit) as RowEnrichmentResult[];
+  }
+
+  throw new Error('Database not initialized');
+}
