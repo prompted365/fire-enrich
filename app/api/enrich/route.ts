@@ -1,7 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { AgentEnrichmentStrategy } from '@/lib/strategies/agent-enrichment-strategy';
-import type { EnrichmentRequest, RowEnrichmentResult } from '@/lib/types';
+import type { EnrichmentRequest, RowEnrichmentResult, EnrichmentSession } from '@/lib/types';
 import { loadSkipList, shouldSkipEmail, getSkipReason } from '@/lib/utils/skip-list';
+import {
+  initDB,
+  createTablesIfNotExists,
+  saveEnrichmentSession,
+  saveRowResult,
+  updateSessionStatus,
+  incrementProcessedRows,
+} from '@/lib/services/db';
 
 // Use Node.js runtime for better compatibility
 export const runtime = 'nodejs';
@@ -37,17 +45,30 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!emailColumn) {
-      return NextResponse.json(
-        { error: 'Email column is required' },
-        { status: 400 }
-      );
-    }
+  if (!emailColumn) {
+    return NextResponse.json(
+      { error: 'Email column is required' },
+      { status: 400 }
+    );
+  }
 
-    // Use a more compatible UUID generation
-    const sessionId = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
-    const abortController = new AbortController();
-    activeSessions.set(sessionId, abortController);
+  // Use a more compatible UUID generation
+  const sessionId = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+  const abortController = new AbortController();
+  activeSessions.set(sessionId, abortController);
+
+  await initDB();
+  await createTablesIfNotExists();
+
+  const session: EnrichmentSession = {
+    id: sessionId,
+    totalRows: rows.length,
+    processedRows: 0,
+    results: [],
+    status: 'active',
+    startedAt: new Date(),
+  };
+  await saveEnrichmentSession(session);
 
     // Check environment variables and headers for API keys
     const openaiApiKey = process.env.OPENAI_API_KEY || request.headers.get('X-OpenAI-API-Key');
@@ -128,7 +149,10 @@ export async function POST(request: NextRequest) {
                   })}\n\n`
                 )
               );
-              
+
+              await saveRowResult(sessionId, skipResult);
+              await incrementProcessedRows(sessionId);
+
               continue; // Skip to next row
             }
             
@@ -191,6 +215,9 @@ export async function POST(request: NextRequest) {
                   })}\n\n`
                 )
               );
+
+              await saveRowResult(sessionId, result);
+              await incrementProcessedRows(sessionId);
             } catch (error) {
               // Send error for this row
               const errorResult: RowEnrichmentResult = {
@@ -209,6 +236,9 @@ export async function POST(request: NextRequest) {
                   })}\n\n`
                 )
               );
+
+              await saveRowResult(sessionId, errorResult);
+              await incrementProcessedRows(sessionId);
             }
 
             // Small delay between rows to prevent rate limiting
@@ -231,6 +261,10 @@ export async function POST(request: NextRequest) {
             )
           );
         } finally {
+          await updateSessionStatus(
+            sessionId,
+            abortController.signal.aborted ? 'cancelled' : 'completed'
+          );
           activeSessions.delete(sessionId);
           controller.close();
         }
@@ -273,6 +307,7 @@ export async function DELETE(request: NextRequest) {
   if (controller) {
     controller.abort();
     activeSessions.delete(sessionId);
+    await updateSessionStatus(sessionId, 'cancelled');
     return NextResponse.json({ success: true });
   }
 
