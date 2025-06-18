@@ -130,3 +130,19 @@ export async function updateSessionStatus(sessionId: string, status: EnrichmentS
     throw new Error('Database not initialized');
   }
 }
+
+export async function getSessionResults(sessionId: string): Promise<RowEnrichmentResult[]> {
+  if (pgPool) {
+    const { rows } = await pgPool.query('SELECT data FROM enrichment_results WHERE session_id = $1 ORDER BY row_index', [sessionId]);
+    return rows.map(r => (typeof r.data === 'string' ? JSON.parse(r.data) : r.data));
+  } else if (cassandra) {
+    const result = await cassandra.execute(
+      'SELECT data FROM enrichment_results WHERE session_id = ? ORDER BY row_index',
+      [sessionId],
+      { prepare: true }
+    );
+    return result.rows.map(r => (typeof r['data'] === 'string' ? JSON.parse(r['data']) : r['data']));
+  } else {
+    throw new Error('Database not initialized');
+  }
+}
