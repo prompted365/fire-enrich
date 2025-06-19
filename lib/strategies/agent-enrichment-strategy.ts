@@ -11,6 +11,10 @@ export class AgentEnrichmentStrategy {
   ) {
     this.orchestrator = new AgentOrchestrator(firecrawlApiKey, openaiApiKey);
   }
+
+  updateStrategiesFromMetrics(metrics: import('../services/feedback').EnrichmentMetrics) {
+    this.orchestrator.updateStrategiesFromMetrics(metrics);
+  }
   
   async enrichRow(
     row: CSVRow,

@@ -9,7 +9,10 @@ import {
   saveRowResult,
   updateSessionStatus,
   incrementProcessedRows,
+  saveEnrichmentMetrics,
+  getSessionResults,
 } from '@/lib/services/db';
+import { aggregateMetrics } from '@/lib/services/feedback';
 
 // Use Node.js runtime for better compatibility
 export const runtime = 'nodejs';
@@ -265,6 +268,10 @@ export async function POST(request: NextRequest) {
             sessionId,
             abortController.signal.aborted ? 'cancelled' : 'completed'
           );
+          const results = await getSessionResults(sessionId);
+          const metrics = aggregateMetrics(results);
+          await saveEnrichmentMetrics(sessionId, metrics);
+          enrichmentStrategy.updateStrategiesFromMetrics(metrics);
           activeSessions.delete(sessionId);
           controller.close();
         }

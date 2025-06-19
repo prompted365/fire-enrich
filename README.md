@@ -326,3 +326,7 @@ For questions and issues, please open an issue in this repository.
 ### Generate Message API
 
 The `/api/generate-message` endpoint creates short communications using OpenAI. Provide a JSON body with fields like `goal`, `representative`, `organization`, and optional properties such as `reference`, `components`, `tone`, `channel`, `audience`, and `templateName`. You can also pass `?template=myTemplate` as a query parameter to select a registered template.
+
+## Adaptive Prompt Learning
+
+After each enrichment session finishes, the server calculates metrics like average confidence, missing fields and error counts. These metrics are stored in the `enrichment_metrics` table and fed back into the agent orchestrator. When confidence drops or certain fields are often missing, the orchestrator tweaks its prompt templates and can reorder agents to focus on weaker areas. Over time this learning loop helps improve the quality of future enrichments.
