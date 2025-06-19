@@ -10,6 +10,8 @@ import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Download, X, Copy, ExternalLink, Globe, Mail, Check, ChevronDown, ChevronUp, Activity, CheckCircle, AlertCircle, Info } from 'lucide-react';
 import { toast } from 'sonner';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
 
 interface EnrichmentTableProps {
   rows: CSVRow[];
@@ -45,6 +47,7 @@ export function EnrichmentTable({ rows, fields, emailColumn }: EnrichmentTablePr
   const [rowDataArrivalTime, setRowDataArrivalTime] = useState<Map<number, number>>(new Map());
   const [cellsShown, setCellsShown] = useState<Set<string>>(new Set());
   const animationTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const [embedOpen, setEmbedOpen] = useState(false);
 
   // Cleanup animation timer on unmount
   useEffect(() => {
@@ -437,6 +440,19 @@ export function EnrichmentTable({ rows, fields, emailColumn }: EnrichmentTablePr
     setTimeout(() => setCopiedRow(null), 2000);
   };
 
+  const getEmbedSnippet = useCallback(() => {
+    if (!sessionId) return '';
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    return `<iframe src="${origin}/embed/${sessionId}" style="border:none;width:100%;height:600px"></iframe>`;
+  }, [sessionId]);
+
+  const copyEmbedSnippet = () => {
+    const snippet = getEmbedSnippet();
+    if (!snippet) return;
+    copyToClipboard(snippet);
+    toast.success('Embed snippet copied to clipboard!');
+  };
+
   const openDetailSidebar = (rowIndex: number) => {
     const row = rows[rowIndex];
     const result = results.get(rowIndex);
@@ -534,6 +550,15 @@ export function EnrichmentTable({ rows, fields, emailColumn }: EnrichmentTablePr
                   <Download className="w-4 h-4 mr-2" />
                   JSON
                 </Button>
+                {sessionId && (
+                  <Button
+                    onClick={() => setEmbedOpen(true)}
+                    variant="orange"
+                    size="sm"
+                  >
+                    Embed
+                  </Button>
+                )}
               </div>
             )}
             
@@ -1060,6 +1085,29 @@ export function EnrichmentTable({ rows, fields, emailColumn }: EnrichmentTablePr
           )}
         </SheetContent>
       </Sheet>
+
+      <Dialog open={embedOpen} onOpenChange={setEmbedOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Embed Results</DialogTitle>
+            <DialogDescription>
+              Copy the snippet below to embed this table in your site.
+            </DialogDescription>
+          </DialogHeader>
+          <Textarea
+            readOnly
+            value={getEmbedSnippet()}
+            className="font-mono text-xs mt-4"
+            rows={4}
+          />
+          <DialogFooter>
+            <Button onClick={copyEmbedSnippet} variant="orange" size="sm">
+              <Copy className="w-4 h-4 mr-2" />
+              Copy to Clipboard
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Skipped Emails Summary */}
       {(() => {
