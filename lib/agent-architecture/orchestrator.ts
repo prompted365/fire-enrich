@@ -3,10 +3,20 @@ import { EnrichmentResult, SearchResult, EnrichmentField } from '../types';
 import { parseEmail } from '../strategies/email-parser';
 import { FirecrawlService } from '../services/firecrawl';
 import { OpenAIService } from '../services/openai';
+import type { EnrichmentMetrics } from '../services/feedback';
 
 export class AgentOrchestrator {
   private firecrawl: FirecrawlService;
   private openai: OpenAIService;
+  private agentOrder: Array<'discovery' | 'profile' | 'metrics' | 'funding' | 'techStack' | 'other'> = [
+    'discovery',
+    'profile',
+    'metrics',
+    'funding',
+    'techStack',
+    'other'
+  ];
+  private useDetailedPrompts = false;
   
   constructor(
     private firecrawlApiKey: string,
@@ -14,6 +24,20 @@ export class AgentOrchestrator {
   ) {
     this.firecrawl = new FirecrawlService(firecrawlApiKey);
     this.openai = new OpenAIService(openaiApiKey);
+  }
+
+  updateStrategiesFromMetrics(metrics: EnrichmentMetrics) {
+    if (metrics.averageConfidence < 0.5) {
+      this.useDetailedPrompts = true;
+    }
+
+    if (metrics.missingFields && metrics.missingFields['employeeCount'] > 0) {
+      this.agentOrder = ['discovery', 'metrics', 'profile', 'funding', 'techStack', 'other'];
+    } else {
+      this.agentOrder = ['discovery', 'profile', 'metrics', 'funding', 'techStack', 'other'];
+    }
+
+    console.log('[Orchestrator] Strategies updated from metrics:', metrics);
   }
   
   async enrichRow(
@@ -75,166 +99,149 @@ export class AgentOrchestrator {
       const enrichments: Record<string, unknown> = {};
       const context: OrchestrationContext = { email, emailContext, discoveredData: {} };
       
-      // Discovery phase (company identity)
-      if (fieldCategories.discovery.length > 0) {
-        console.log(`[Orchestrator] Activating DISCOVERY-AGENT for fields: ${fieldCategories.discovery.map(f => f.name).join(', ')}`);
-        if (onAgentProgress) {
-          onAgentProgress(`Discovery Agent: Identifying company from ${emailContext.domain}`, 'agent');
-          onAgentProgress(`Target fields: ${fieldCategories.discovery.map(f => f.name).join(', ')}`, 'info');
-        }
-        const discoveryResults = await this.runDiscoveryPhase(
-          context,
-          fieldCategories.discovery,
-          onAgentProgress
-        );
-        console.log(`[Orchestrator] DISCOVERY-AGENT completed, found ${Object.keys(discoveryResults).length} values`);
-        if (onAgentProgress && Object.keys(discoveryResults).length > 0) {
-          onAgentProgress(`Discovery complete: Found ${Object.keys(discoveryResults).length} fields`, 'success');
-        }
-        Object.assign(enrichments, discoveryResults);
-        Object.assign(context.discoveredData, discoveryResults);
-        
-        // If we found a company name, update the context
-        const companyNameField = Object.keys(discoveryResults).find(key => 
-          key.toLowerCase().includes('company') && key.toLowerCase().includes('name')
-        );
-        if (companyNameField && discoveryResults[companyNameField]) {
-          // Extract the value from the EnrichmentResult object
-          const companyNameResult = discoveryResults[companyNameField] as { value?: unknown } | unknown;
-          const companyNameValue = (companyNameResult && typeof companyNameResult === 'object' && 'value' in companyNameResult) ? companyNameResult.value : companyNameResult;
-          (context as OrchestrationContext).companyName = companyNameValue as string;
-          console.log(`[Orchestrator] Updated context with company name: ${(context as OrchestrationContext).companyName}`);
-        }
-        
-        // Report progress
-        for (const [field, value] of Object.entries(discoveryResults)) {
-          if (value && onProgress) {
-            onProgress(field, value);
+      for (const phase of this.agentOrder) {
+        if (phase === 'discovery' && fieldCategories.discovery.length > 0) {
+          console.log(`[Orchestrator] Activating DISCOVERY-AGENT for fields: ${fieldCategories.discovery.map(f => f.name).join(', ')}`);
+          if (onAgentProgress) {
+            onAgentProgress(`Discovery Agent: Identifying company from ${emailContext.domain}`, 'agent');
+            onAgentProgress(`Target fields: ${fieldCategories.discovery.map(f => f.name).join(', ')}`, 'info');
           }
-        }
-      }
-      
-      // Profile phase (industry, location, etc)
-      if (fieldCategories.profile.length > 0) {
-        console.log(`[Orchestrator] Activating COMPANY-PROFILE-AGENT for fields: ${fieldCategories.profile.map(f => f.name).join(', ')}`);
-        if (onAgentProgress) {
-          onAgentProgress(`Profile Agent: Gathering company details`, 'agent');
-          onAgentProgress(`Target fields: ${fieldCategories.profile.map(f => f.name).join(', ')}`, 'info');
-        }
-        const profileResults = await this.runProfilePhase(
-          context,
-          fieldCategories.profile,
-          onAgentProgress
-        );
-        console.log(`[Orchestrator] COMPANY-PROFILE-AGENT completed, found ${Object.keys(profileResults).length} values`);
-        if (onAgentProgress && Object.keys(profileResults).length > 0) {
-          onAgentProgress(`Profile complete: Found ${Object.keys(profileResults).length} fields`, 'success');
-        }
-        Object.assign(enrichments, profileResults);
-        
-        for (const [field, value] of Object.entries(profileResults)) {
-          if (value && onProgress) {
-            onProgress(field, value);
+          const discoveryResults = await this.runDiscoveryPhase(
+            context,
+            fieldCategories.discovery,
+            onAgentProgress
+          );
+          console.log(`[Orchestrator] DISCOVERY-AGENT completed, found ${Object.keys(discoveryResults).length} values`);
+          if (onAgentProgress && Object.keys(discoveryResults).length > 0) {
+            onAgentProgress(`Discovery complete: Found ${Object.keys(discoveryResults).length} fields`, 'success');
           }
-        }
-      }
-      
-      // Metrics phase (employee count, revenue)
-      if (fieldCategories.metrics.length > 0) {
-        console.log(`[Orchestrator] Activating METRICS-AGENT for fields: ${fieldCategories.metrics.map(f => f.name).join(', ')}`);
-        if (onAgentProgress) {
-          onAgentProgress(`Metrics Agent: Analyzing company metrics`, 'agent');
-          onAgentProgress(`Target fields: ${fieldCategories.metrics.map(f => f.name).join(', ')}`, 'info');
-        }
-        const metricsResults = await this.runMetricsPhase(
-          context,
-          fieldCategories.metrics,
-          onAgentProgress
-        );
-        console.log(`[Orchestrator] METRICS-AGENT completed, found ${Object.keys(metricsResults).length} values`);
-        if (onAgentProgress && Object.keys(metricsResults).length > 0) {
-          onAgentProgress(`Metrics complete: Found ${Object.keys(metricsResults).length} fields`, 'success');
-        }
-        Object.assign(enrichments, metricsResults);
-        
-        for (const [field, value] of Object.entries(metricsResults)) {
-          if (value && onProgress) {
-            onProgress(field, value);
+          Object.assign(enrichments, discoveryResults);
+          Object.assign(context.discoveredData, discoveryResults);
+
+          const companyNameField = Object.keys(discoveryResults).find(key =>
+            key.toLowerCase().includes('company') && key.toLowerCase().includes('name')
+          );
+          if (companyNameField && discoveryResults[companyNameField]) {
+            const companyNameResult = discoveryResults[companyNameField] as { value?: unknown } | unknown;
+            const companyNameValue = (companyNameResult && typeof companyNameResult === 'object' && 'value' in companyNameResult) ? companyNameResult.value : companyNameResult;
+            (context as OrchestrationContext).companyName = companyNameValue as string;
+            console.log(`[Orchestrator] Updated context with company name: ${(context as OrchestrationContext).companyName}`);
           }
-        }
-      }
-      
-      // Funding phase
-      if (fieldCategories.funding.length > 0) {
-        console.log(`[Orchestrator] Activating FUNDING-AGENT for fields: ${fieldCategories.funding.map(f => f.name).join(', ')}`);
-        if (onAgentProgress) {
-          onAgentProgress(`Funding Agent: Researching investment data`, 'agent');
-          onAgentProgress(`Target fields: ${fieldCategories.funding.map(f => f.name).join(', ')}`, 'info');
-        }
-        const fundingResults = await this.runFundingPhase(
-          context,
-          fieldCategories.funding,
-          onAgentProgress
-        );
-        console.log(`[Orchestrator] FUNDING-AGENT completed, found ${Object.keys(fundingResults).length} values`);
-        if (onAgentProgress && Object.keys(fundingResults).length > 0) {
-          onAgentProgress(`Funding complete: Found ${Object.keys(fundingResults).length} fields`, 'success');
-        }
-        Object.assign(enrichments, fundingResults);
-        
-        for (const [field, value] of Object.entries(fundingResults)) {
-          if (value && onProgress) {
-            onProgress(field, value);
+
+          for (const [field, value] of Object.entries(discoveryResults)) {
+            if (value && onProgress) {
+              onProgress(field, value);
+            }
           }
-        }
-      }
-      
-      // Tech Stack phase
-      if (fieldCategories.techStack.length > 0) {
-        console.log(`[Orchestrator] Activating TECH-STACK-AGENT for fields: ${fieldCategories.techStack.map(f => f.name).join(', ')}`);
-        if (onAgentProgress) {
-          onAgentProgress(`Tech Stack Agent: Detecting technologies`, 'agent');
-          onAgentProgress(`Target fields: ${fieldCategories.techStack.map(f => f.name).join(', ')}`, 'info');
-        }
-        const techStackResults = await this.runTechStackPhase(
-          context,
-          fieldCategories.techStack,
-          onAgentProgress
-        );
-        console.log(`[Orchestrator] TECH-STACK-AGENT completed, found ${Object.keys(techStackResults).length} values`);
-        if (onAgentProgress && Object.keys(techStackResults).length > 0) {
-          onAgentProgress(`Tech Stack complete: Found ${Object.keys(techStackResults).length} fields`, 'success');
-        }
-        Object.assign(enrichments, techStackResults);
-        
-        for (const [field, value] of Object.entries(techStackResults)) {
-          if (value && onProgress) {
-            onProgress(field, value);
+        } else if (phase === 'profile' && fieldCategories.profile.length > 0) {
+          console.log(`[Orchestrator] Activating COMPANY-PROFILE-AGENT for fields: ${fieldCategories.profile.map(f => f.name).join(', ')}`);
+          if (onAgentProgress) {
+            onAgentProgress(`Profile Agent: Gathering company details`, 'agent');
+            onAgentProgress(`Target fields: ${fieldCategories.profile.map(f => f.name).join(', ')}`, 'info');
           }
-        }
-      }
-      
-      // General phase (CEO names, custom fields, etc)
-      if (fieldCategories.other.length > 0) {
-        console.log(`[Orchestrator] Activating GENERAL-AGENT for fields: ${fieldCategories.other.map(f => f.name).join(', ')}`);
-        if (onAgentProgress) {
-          onAgentProgress(`General Agent: Extracting custom information`, 'agent');
-          onAgentProgress(`Target fields: ${fieldCategories.other.map(f => f.name).join(', ')}`, 'info');
-        }
-        const generalResults = await this.runGeneralPhase(
-          context,
-          fieldCategories.other,
-          onAgentProgress
-        );
-        console.log(`[ORCHESTRATOR] GENERAL-AGENT completed, found ${Object.keys(generalResults).length} values`);
-        if (onAgentProgress && Object.keys(generalResults).length > 0) {
-          onAgentProgress(`General complete: Found ${Object.keys(generalResults).length} fields`, 'success');
-        }
-        Object.assign(enrichments, generalResults);
-        
-        for (const [field, value] of Object.entries(generalResults)) {
-          if (value && onProgress) {
-            onProgress(field, value);
+          const profileResults = await this.runProfilePhase(
+            context,
+            fieldCategories.profile,
+            onAgentProgress
+          );
+          console.log(`[Orchestrator] COMPANY-PROFILE-AGENT completed, found ${Object.keys(profileResults).length} values`);
+          if (onAgentProgress && Object.keys(profileResults).length > 0) {
+            onAgentProgress(`Profile complete: Found ${Object.keys(profileResults).length} fields`, 'success');
+          }
+          Object.assign(enrichments, profileResults);
+
+          for (const [field, value] of Object.entries(profileResults)) {
+            if (value && onProgress) {
+              onProgress(field, value);
+            }
+          }
+        } else if (phase === 'metrics' && fieldCategories.metrics.length > 0) {
+          console.log(`[Orchestrator] Activating METRICS-AGENT for fields: ${fieldCategories.metrics.map(f => f.name).join(', ')}`);
+          if (onAgentProgress) {
+            onAgentProgress(`Metrics Agent: Analyzing company metrics`, 'agent');
+            onAgentProgress(`Target fields: ${fieldCategories.metrics.map(f => f.name).join(', ')}`, 'info');
+          }
+          const metricsResults = await this.runMetricsPhase(
+            context,
+            fieldCategories.metrics,
+            onAgentProgress
+          );
+          console.log(`[Orchestrator] METRICS-AGENT completed, found ${Object.keys(metricsResults).length} values`);
+          if (onAgentProgress && Object.keys(metricsResults).length > 0) {
+            onAgentProgress(`Metrics complete: Found ${Object.keys(metricsResults).length} fields`, 'success');
+          }
+          Object.assign(enrichments, metricsResults);
+
+          for (const [field, value] of Object.entries(metricsResults)) {
+            if (value && onProgress) {
+              onProgress(field, value);
+            }
+          }
+        } else if (phase === 'funding' && fieldCategories.funding.length > 0) {
+          console.log(`[Orchestrator] Activating FUNDING-AGENT for fields: ${fieldCategories.funding.map(f => f.name).join(', ')}`);
+          if (onAgentProgress) {
+            onAgentProgress(`Funding Agent: Researching investment data`, 'agent');
+            onAgentProgress(`Target fields: ${fieldCategories.funding.map(f => f.name).join(', ')}`, 'info');
+          }
+          const fundingResults = await this.runFundingPhase(
+            context,
+            fieldCategories.funding,
+            onAgentProgress
+          );
+          console.log(`[Orchestrator] FUNDING-AGENT completed, found ${Object.keys(fundingResults).length} values`);
+          if (onAgentProgress && Object.keys(fundingResults).length > 0) {
+            onAgentProgress(`Funding complete: Found ${Object.keys(fundingResults).length} fields`, 'success');
+          }
+          Object.assign(enrichments, fundingResults);
+
+          for (const [field, value] of Object.entries(fundingResults)) {
+            if (value && onProgress) {
+              onProgress(field, value);
+            }
+          }
+        } else if (phase === 'techStack' && fieldCategories.techStack.length > 0) {
+          console.log(`[Orchestrator] Activating TECH-STACK-AGENT for fields: ${fieldCategories.techStack.map(f => f.name).join(', ')}`);
+          if (onAgentProgress) {
+            onAgentProgress(`Tech Stack Agent: Detecting technologies`, 'agent');
+            onAgentProgress(`Target fields: ${fieldCategories.techStack.map(f => f.name).join(', ')}`, 'info');
+          }
+          const techStackResults = await this.runTechStackPhase(
+            context,
+            fieldCategories.techStack,
+            onAgentProgress
+          );
+          console.log(`[Orchestrator] TECH-STACK-AGENT completed, found ${Object.keys(techStackResults).length} values`);
+          if (onAgentProgress && Object.keys(techStackResults).length > 0) {
+            onAgentProgress(`Tech Stack complete: Found ${Object.keys(techStackResults).length} fields`, 'success');
+          }
+          Object.assign(enrichments, techStackResults);
+
+          for (const [field, value] of Object.entries(techStackResults)) {
+            if (value && onProgress) {
+              onProgress(field, value);
+            }
+          }
+        } else if (phase === 'other' && fieldCategories.other.length > 0) {
+          console.log(`[Orchestrator] Activating GENERAL-AGENT for fields: ${fieldCategories.other.map(f => f.name).join(', ')}`);
+          if (onAgentProgress) {
+            onAgentProgress(`General Agent: Extracting custom information`, 'agent');
+            onAgentProgress(`Target fields: ${fieldCategories.other.map(f => f.name).join(', ')}`, 'info');
+          }
+          const generalResults = await this.runGeneralPhase(
+            context,
+            fieldCategories.other,
+            onAgentProgress
+          );
+          console.log(`[ORCHESTRATOR] GENERAL-AGENT completed, found ${Object.keys(generalResults).length} values`);
+          if (onAgentProgress && Object.keys(generalResults).length > 0) {
+            onAgentProgress(`General complete: Found ${Object.keys(generalResults).length} fields`, 'success');
+          }
+          Object.assign(enrichments, generalResults);
+
+          for (const [field, value] of Object.entries(generalResults)) {
+            if (value && onProgress) {
+              onProgress(field, value);
+            }
           }
         }
       }
