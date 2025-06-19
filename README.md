@@ -26,14 +26,26 @@ Turn a simple list of emails into a rich dataset with company profiles, funding 
 ### Quick Start
 
 1. Clone this repository
-2. Create a `.env.local` file with your API keys:
+2. Create a `.env.local` file with your API keys and database connection:
    ```
    FIRECRAWL_API_KEY=your_firecrawl_key
    OPENAI_API_KEY=your_openai_key
+   DATABASE_URL=postgres://user:password@localhost:5432/fire_enrich
    ```
 3. Install dependencies: `npm install` or `yarn install`
 4. Run the development server: `npm run dev` or `yarn dev`
 5. Open [http://localhost:3000](http://localhost:3000)
+
+### Database Setup
+
+Set `DATABASE_URL` to your database connection string. Fire Enrich supports
+two engines:
+
+- **PostgreSQL** – `postgres://user:password@localhost:5432/fire_enrich`
+- **Cassandra** – `cassandra://host:9042/fire_enrich`
+
+The API will create the `enrichment_sessions` and `enrichment_results` tables
+automatically when it first runs, so no separate migration step is required.
 
 ## Example Enrichment
 
@@ -277,6 +289,15 @@ export const FIRE_ENRICH_CONFIG = {
   },
 } as const;
 ```
+
+### Embedding Results
+
+1. After your enrichment session finishes, click the **Embed** button above the results table.
+2. Copy the iframe snippet shown in the dialog:
+   ```html
+   <iframe src="https://your-domain/embed/SESSION_ID" style="border:none;width:100%;height:600px"></iframe>
+   ```
+3. Paste the snippet into any page to display the table. You can also visit `/embed/SESSION_ID` directly to preview.
 
 ## Our Open Source Philosophy
 
