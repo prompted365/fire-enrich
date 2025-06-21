@@ -2,9 +2,54 @@ import { Pool } from 'pg';
 import { Client as CassandraClient } from 'cassandra-driver';
 import type { EnrichmentSession, RowEnrichmentResult } from '../types';
 import type { EnrichmentMetrics } from './feedback';
+import fs from 'fs/promises';
+import path from 'path';
 
 let pgPool: Pool | null = null;
 let cassandra: CassandraClient | null = null;
+
+// P&C Platform Types
+export interface Agency {
+  id: string;
+  name: string;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface AgencySettingsData {
+  agency_id: string;
+  new_business_comp_pct?: number;
+  first_renewal_comp_pct?: number;
+  renewal_comp_pct?: number;
+  retention_rate_pct?: number;
+}
+
+export interface AgencySettings extends AgencySettingsData {
+  id: string;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface DailyActivityData {
+  agency_id: string;
+  activity_date: string; // YYYY-MM-DD
+  dials?: number;
+  contacts?: number;
+  transfers?: number;
+  quoted_transfers?: number;
+  failed_transfers?: number;
+  sales_qty?: number;
+  premium_sold?: number;
+  marketing_spend?: number;
+  lead_cost?: number;
+}
+
+export interface DailyActivity extends DailyActivityData {
+  id: string;
+  created_at: Date;
+  updated_at: Date;
+}
+
 
 export async function initDB() {
   const url = process.env.DATABASE_URL;
@@ -24,6 +69,7 @@ export async function initDB() {
 
 export async function createTablesIfNotExists() {
   if (pgPool) {
+    // Standard Enrichment Tables
     await pgPool.query(`
       CREATE TABLE IF NOT EXISTS enrichment_sessions (
         id TEXT PRIMARY KEY,
@@ -50,6 +96,18 @@ export async function createTablesIfNotExists() {
         created_at TIMESTAMP DEFAULT NOW()
       );
     `);
+
+    // P&C Platform Tables
+    try {
+      const pandcSchemaPath = path.join(process.cwd(), 'sql', 'pandc_schema.sql');
+      const pandcSchemaSQL = await fs.readFile(pandcSchemaPath, 'utf-8');
+      await pgPool.query(pandcSchemaSQL);
+      console.log('P&C tables created/verified successfully.');
+    } catch (error) {
+      console.error('Error creating P&C tables:', error);
+      throw error; // Re-throw to indicate a problem with setup
+    }
+
   } else if (cassandra) {
     await cassandra.execute(
       `CREATE TABLE IF NOT EXISTS enrichment_sessions (
@@ -81,6 +139,131 @@ export async function createTablesIfNotExists() {
     throw new Error('Database not initialized');
   }
 }
+
+// --- P&C Platform Database Functions ---
+
+export async function createAgency(name: string): Promise<Agency> {
+  if (!pgPool) throw new Error('PostgreSQL pool not initialized.');
+  const res = await pgPool.query(
+    'INSERT INTO agencies (name) VALUES ($1) RETURNING *',
+    [name]
+  );
+  return res.rows[0] as Agency;
+}
+
+export async function getAgencyById(id: string): Promise<Agency | null> {
+  if (!pgPool) throw new Error('PostgreSQL pool not initialized.');
+  const res = await pgPool.query('SELECT * FROM agencies WHERE id = $1', [id]);
+  return res.rowCount ? res.rows[0] as Agency : null;
+}
+
+export async function getAllAgencies(): Promise<Agency[]> {
+  if (!pgPool) throw new Error('PostgreSQL pool not initialized.');
+  const res = await pgPool.query('SELECT * FROM agencies ORDER BY name');
+  return res.rows as Agency[];
+}
+
+export async function createOrUpdateAgencySettings(settingsData: AgencySettingsData): Promise<AgencySettings> {
+  if (!pgPool) throw new Error('PostgreSQL pool not initialized.');
+  const {
+    agency_id,
+    new_business_comp_pct = 15.00,
+    first_renewal_comp_pct = 10.00,
+    renewal_comp_pct = 8.00,
+    retention_rate_pct = 75.00,
+  } = settingsData;
+
+  const res = await pgPool.query(
+    `INSERT INTO agency_settings (agency_id, new_business_comp_pct, first_renewal_comp_pct, renewal_comp_pct, retention_rate_pct)
+     VALUES ($1, $2, $3, $4, $5)
+     ON CONFLICT (agency_id) DO UPDATE SET
+       new_business_comp_pct = EXCLUDED.new_business_comp_pct,
+       first_renewal_comp_pct = EXCLUDED.first_renewal_comp_pct,
+       renewal_comp_pct = EXCLUDED.renewal_comp_pct,
+       retention_rate_pct = EXCLUDED.retention_rate_pct,
+       updated_at = NOW()
+     RETURNING *`,
+    [agency_id, new_business_comp_pct, first_renewal_comp_pct, renewal_comp_pct, retention_rate_pct]
+  );
+  return res.rows[0] as AgencySettings;
+}
+
+export async function getAgencySettings(agencyId: string): Promise<AgencySettings | null> {
+  if (!pgPool) throw new Error('PostgreSQL pool not initialized.');
+  const res = await pgPool.query('SELECT * FROM agency_settings WHERE agency_id = $1', [agencyId]);
+  return res.rowCount ? res.rows[0] as AgencySettings : null;
+}
+
+export async function logDailyActivity(activityData: DailyActivityData): Promise<DailyActivity> {
+  if (!pgPool) throw new Error('PostgreSQL pool not initialized.');
+  const {
+    agency_id,
+    activity_date,
+    dials = 0,
+    contacts = 0,
+    transfers = 0,
+    quoted_transfers = 0,
+    failed_transfers = 0,
+    sales_qty = 0,
+    premium_sold = 0,
+    marketing_spend = 0,
+    lead_cost = 0,
+  } = activityData;
+
+  const res = await pgPool.query(
+    `INSERT INTO daily_activities (
+       agency_id, activity_date, dials, contacts, transfers, quoted_transfers,
+       failed_transfers, sales_qty, premium_sold, marketing_spend, lead_cost
+     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+     ON CONFLICT (agency_id, activity_date) DO UPDATE SET
+       dials = EXCLUDED.dials,
+       contacts = EXCLUDED.contacts,
+       transfers = EXCLUDED.transfers,
+       quoted_transfers = EXCLUDED.quoted_transfers,
+       failed_transfers = EXCLUDED.failed_transfers,
+       sales_qty = EXCLUDED.sales_qty,
+       premium_sold = EXCLUDED.premium_sold,
+       marketing_spend = EXCLUDED.marketing_spend,
+       lead_cost = EXCLUDED.lead_cost,
+       updated_at = NOW()
+     RETURNING *`,
+    [
+      agency_id, activity_date, dials, contacts, transfers, quoted_transfers,
+      failed_transfers, sales_qty, premium_sold, marketing_spend, lead_cost
+    ]
+  );
+  return res.rows[0] as DailyActivity;
+}
+
+export async function getDailyActivitiesForAgency(
+  agencyId: string,
+  startDate?: string,
+  endDate?: string
+): Promise<DailyActivity[]> {
+  if (!pgPool) throw new Error('PostgreSQL pool not initialized.');
+
+  let query = 'SELECT * FROM daily_activities WHERE agency_id = $1';
+  const params: any[] = [agencyId];
+
+  if (startDate && endDate) {
+    query += ' AND activity_date BETWEEN $2 AND $3';
+    params.push(startDate, endDate);
+  } else if (startDate) {
+    query += ' AND activity_date >= $2';
+    params.push(startDate);
+  } else if (endDate) {
+    query += ' AND activity_date <= $2';
+    params.push(endDate);
+  }
+
+  query += ' ORDER BY activity_date DESC';
+
+  const res = await pgPool.query(query, params);
+  return res.rows as DailyActivity[];
+}
+
+// --- End P&C Platform Database Functions ---
+
 
 export async function saveEnrichmentSession(session: EnrichmentSession) {
   if (pgPool) {
