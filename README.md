@@ -4,13 +4,16 @@
   <img src="https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExNjJwMnF2cW5zbXBhbGV6NXBpb3lkZmVhMWEwY3hmdmt3d3ZtbWc5YSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/QhpbWI09KyFZ0rwD72/giphy.gif" alt="Fire Enrich Demo" width="100%" />
 </div>
 
-Turn a simple list of emails into a rich dataset with company profiles, funding data, tech stacks, and more. Powered by [Firecrawl](https://www.firecrawl.dev/) and a multi-agent AI system.
+Turn a simple list of emails into a rich dataset with company profiles, funding data, tech stacks, and more. Powered by [{{SCRAPER_SERVICE_NAME}}](https://www.{{SCRAPER_SERVICE_DOMAIN}}/) and a multi-agent AI system.
 
 ## Technologies
 
-- **Firecrawl**: Web scraping and content aggregation
+- **{{SCRAPER_SERVICE_NAME}}**: Web scraping and content aggregation
+
 - **OpenAI**: Intelligent data extraction and synthesis
 - **Next.js 15**: Modern React framework with App Router
+A set of placeholder variables is documented in [VARIABLE_DICTIONARY.md](VARIABLE_DICTIONARY.md) to keep examples domain agnostic.
+
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fmendableai%2Ffire-enrich-standalone&env=FIRECRAWL_API_KEY,OPENAI_API_KEY&envDescription=API%20keys%20required%20for%20Fire%20Enrich&envLink=https%3A%2F%2Fgithub.com%2Fmendableai%2Ffire-enrich-standalone%23required-api-keys)
 
@@ -20,7 +23,7 @@ Turn a simple list of emails into a rich dataset with company profiles, funding 
 
 | Service | Purpose | Get Key |
 |---------|---------|---------|
-| Firecrawl | Web scraping and content aggregation | [firecrawl.dev/app/api-keys](https://www.firecrawl.dev/app/api-keys) |
+| {{SCRAPER_SERVICE_NAME}} | Web scraping and content aggregation | [{{SCRAPER_SERVICE_DOMAIN}}/app/api-keys](https://www.{{SCRAPER_SERVICE_DOMAIN}}/app/api-keys) |
 | OpenAI | Intelligent data extraction | [platform.openai.com/api-keys](https://platform.openai.com/api-keys) |
 
 ### Quick Start
@@ -77,62 +80,62 @@ automatically when it first runs, so no separate migration step is required.
 
 ## How It Works
 
-### Architecture Overview: Following "ericciarla@firecrawl.dev" Through the System
+### Architecture Overview: Following "{{SAMPLE_EMAIL}}" Through the System
 
-Let's see exactly how Fire Enrich processes a real example - enriching data for the email ericciarla@firecrawl.dev.
+Let's see exactly how Fire Enrich processes a real example - enriching data for the email {{SAMPLE_EMAIL}}.
 
 ```mermaid
 graph TD
-    Start["Input: ericciarla@firecrawl.dev - Industry, CEO, Funding Stage, Tech Stack"]:::primary
+    Start["Input: {{SAMPLE_EMAIL}} - Industry, CEO, Funding Stage, Tech Stack"]:::primary
     
-    Start -->|1. Extract Domain| Domain["Domain: firecrawl.dev - Corporate email detected"]:::primary
+    Start -->|1. Extract Domain| Domain["Domain: {{EXAMPLE_DOMAIN}} - Corporate email detected"]:::primary
     
     Domain -->|2. Start Orchestration| Orchestrator["Agent Orchestrator - Executes agents in optimized sequence - Each phase builds on previous data"]:::synthesis
 
     %% Phase 1: Discovery
     Orchestrator -->|Phase 1| Discovery["Discovery Agent - Finds basic company info first"]:::agent
     
-    Discovery -->|Parallel searches| DiscSearch["Parallel Searches: Firecrawl company, firecrawl.dev, What is Firecrawl"]:::search
+    Discovery -->|Parallel searches| DiscSearch["Parallel Searches: {{EXAMPLE_COMPANY_NAME}} company, {{EXAMPLE_DOMAIN}}, What is {{EXAMPLE_COMPANY_NAME}}"]:::search
     
-    DiscSearch -->|Firecrawl API| DiscFC["3 concurrent API calls - Returns company website and basic information"]:::firecrawl
+    DiscSearch -->|{{SCRAPER_SERVICE_NAME}} API| DiscFC["3 concurrent API calls - Returns company website and basic information"]:::firecrawl
     
-    DiscFC -->|Extracts| DiscData["Company: Firecrawl - Website: firecrawl.dev - Type: B2B SaaS"]:::source
+    DiscFC -->|Extracts| DiscData["Company: {{EXAMPLE_COMPANY_NAME}} - Website: {{EXAMPLE_DOMAIN}} - Type: B2B SaaS"]:::source
 
     %% Phase 2: Company Profile
     DiscData -->|Phase 2| Profile["Company Profile Agent - Uses company name from Phase 1 to find industry details"]:::agent
     
-    Profile -->|Parallel searches| ProfSearch["Parallel Searches: Firecrawl industry classification, Firecrawl web scraping API, Developer tools Firecrawl"]:::search
+    Profile -->|Parallel searches| ProfSearch["Parallel Searches: {{EXAMPLE_COMPANY_NAME}} industry classification, {{EXAMPLE_COMPANY_NAME}} web scraping API, Developer tools {{EXAMPLE_COMPANY_NAME}}"]:::search
     
-    ProfSearch -->|Firecrawl API| ProfFC["3 concurrent API calls - Searches industry-specific sources"]:::firecrawl
+    ProfSearch -->|{{SCRAPER_SERVICE_NAME}} API| ProfFC["3 concurrent API calls - Searches industry-specific sources"]:::firecrawl
     
     ProfFC -->|Extracts| ProfData["Industry: Developer Tools - Sub-category: Web Scraping APIs - Market: B2B SaaS"]:::source
 
     %% Phase 3: Financial
     ProfData -->|Phase 3| Funding["Financial Intel Agent - Searches for funding using company and industry context"]:::agent
     
-    Funding -->|Parallel searches| FundSearch["Parallel Searches: Firecrawl funding rounds, Mendable AI acquisition Firecrawl, Firecrawl investors crunchbase"]:::search
+    Funding -->|Parallel searches| FundSearch["Parallel Searches: {{EXAMPLE_COMPANY_NAME}} funding rounds, {{PARENT_COMPANY_NAME}} acquisition {{EXAMPLE_COMPANY_NAME}}, {{EXAMPLE_COMPANY_NAME}} investors crunchbase"]:::search
     
-    FundSearch -->|Firecrawl API| FundFC["3 concurrent API calls - Checks TechCrunch, Crunchbase, venture news sites"]:::firecrawl
+    FundSearch -->|{{SCRAPER_SERVICE_NAME}} API| FundFC["3 concurrent API calls - Checks TechCrunch, Crunchbase, venture news sites"]:::firecrawl
     
-    FundFC -->|Extracts| FundData["Funding: Seed Stage - Part of Mendable AI - YC-backed company"]:::source
+    FundFC -->|Extracts| FundData["Funding: Seed Stage - Part of {{PARENT_COMPANY_NAME}} - YC-backed company"]:::source
 
     %% Phase 4: Tech Stack
     FundData -->|Phase 4| Tech["Tech Stack Agent - Analyzes GitHub and tech docs - HTML source analysis"]:::agent
     
-    Tech -->|Parallel searches| TechSearch["Parallel Searches: github.com/mendableai/firecrawl, Firecrawl API documentation, Direct HTML analysis"]:::search
+    Tech -->|Parallel searches| TechSearch["Parallel Searches: github.com/{{PARENT_COMPANY_NAME}}/{{EXAMPLE_COMPANY_NAME}}, {{SCRAPER_SERVICE_NAME}} API documentation, Direct HTML analysis"]:::search
     
-    TechSearch -->|Firecrawl API| TechFC["3 concurrent API calls - HTML meta tag analysis - GitHub repo scan"]:::firecrawl
+    TechSearch -->|{{SCRAPER_SERVICE_NAME}} API| TechFC["3 concurrent API calls - HTML meta tag analysis - GitHub repo scan"]:::firecrawl
     
     TechFC -->|Extracts| TechData["Tech Stack: Node.js, Python, Redis, Playwright, Kubernetes"]:::source
 
     %% Phase 5: General
     TechData -->|Phase 5| General["General Purpose Agent - Handles custom field CEO - Uses all previous context"]:::agent
     
-    General -->|Targeted search| GenSearch["Focused Search: Firecrawl CEO founder Eric, Eric Ciarla Firecrawl, LinkedIn company search"]:::search
+    General -->|Targeted search| GenSearch["Focused Search: {{EXAMPLE_COMPANY_NAME}} CEO founder {{SAMPLE_CEO_NAME}}, {{SAMPLE_CEO_NAME}} {{EXAMPLE_COMPANY_NAME}}, LinkedIn company search"]:::search
     
-    GenSearch -->|Firecrawl API| GenFC["3 concurrent API calls - Cross-references multiple sources"]:::firecrawl
+    GenSearch -->|{{SCRAPER_SERVICE_NAME}} API| GenFC["3 concurrent API calls - Cross-references multiple sources"]:::firecrawl
     
-    GenFC -->|Extracts| GenData["CEO: Eric Ciarla - Co-founder and CEO of Firecrawl - Previously at Mendable AI"]:::source
+    GenFC -->|Extracts| GenData["CEO: {{SAMPLE_CEO_NAME}} - Co-founder and CEO of {{EXAMPLE_COMPANY_NAME}} - Previously at {{PARENT_COMPANY_NAME}}"]:::source
 
     %% Final Synthesis
     DiscData --> Synthesis
@@ -146,13 +149,13 @@ graph TD
     Synthesis -->|Outputs| Results
     
     subgraph Results[Enriched Data]
-        R1["Industry: Developer Tools / Web Scraping - Source: firecrawl.dev/about"]:::good
-        R2["CEO: Eric Ciarla Co-founder and CEO - Source: linkedin.com/company/firecrawl"]:::good
-        R3["Funding: Seed Part of Mendable AI - Source: crunchbase.com"]:::good
-        R4["Tech Stack: Node.js, Python, Redis, K8s - Source: github.com/mendableai/firecrawl"]:::good
+        R1["Industry: Developer Tools / Web Scraping - Source: {{EXAMPLE_DOMAIN}}/about"]:::good
+        R2["CEO: {{SAMPLE_CEO_NAME}} Co-founder and CEO - Source: linkedin.com/company/{{EXAMPLE_COMPANY_NAME}}"]:::good
+        R3["Funding: Seed Part of {{PARENT_COMPANY_NAME}} - Source: crunchbase.com"]:::good
+        R4["Tech Stack: Node.js, Python, Redis, K8s - Source: github.com/{{PARENT_COMPANY_NAME}}/{{EXAMPLE_COMPANY_NAME}}"]:::good
     end
     
-    Results -->|Final Output| Output["Updated CSV Row: ericciarla@firecrawl.dev - Complete profile with 4 new data points and sources"]:::answer
+    Results -->|Final Output| Output["Updated CSV Row: {{SAMPLE_EMAIL}} - Complete profile with 4 new data points and sources"]:::answer
     
     classDef primary fill:#ff8c42,stroke:#ff6b1a,stroke-width:2px,color:#fff
     classDef agent fill:#9c27b0,stroke:#7b1fa2,stroke-width:2px,color:#fff
@@ -246,7 +249,7 @@ This design allows Fire Enrich to grow with your needs while maintaining type sa
 1.  **Upload & Parse**: Upload a CSV with emails. The system extracts the company domain from each email.
 2.  **Field Selection**: Choose the data points you need, from company descriptions to funding stages.
 3.  **Sequential Agent Execution**: Agents activate in phases, each building on previous discoveries for maximum accuracy.
-4.  **Parallel Searches Per Phase**: Within each phase, multiple searches run concurrently using the Firecrawl API.
+4.  **Parallel Searches Per Phase**: Within each phase, multiple searches run concurrently using the {{SCRAPER_SERVICE_NAME}} API.
 5.  **AI Synthesis**: GPT-4o analyzes all findings, resolves conflicts, and extracts structured data.
 6.  **Real-time Results**: Your table populates in real-time, complete with enriched data and source citations.
 
