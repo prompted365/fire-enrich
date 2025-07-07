@@ -1,7 +1,7 @@
-# Fire Enrich - AI-Powered Data Enrichment Tool
+# ReconnAIssance - AI-Powered Data Enrichment Tool
 
 <div align="center">
-  <img src="https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExNjJwMnF2cW5zbXBhbGV6NXBpb3lkZmVhMWEwY3hmdmt3d3ZtbWc5YSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/QhpbWI09KyFZ0rwD72/giphy.gif" alt="Fire Enrich Demo" width="100%" />
+  <img src="https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExNjJwMnF2cW5zbXBhbGV6NXBpb3lkZmVhMWEwY3hmdmt3d3ZtbWc5YSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/QhpbWI09KyFZ0rwD72/giphy.gif" alt="ReconnAIssance Demo" width="100%" />
 </div>
 
 Turn a simple list of emails into a rich dataset with company profiles, funding data, tech stacks, and more. Powered by [{{SCRAPER_SERVICE_NAME}}](https://www.{{SCRAPER_SERVICE_DOMAIN}}/) and a multi-agent AI system.
@@ -41,7 +41,7 @@ A set of placeholder variables is documented in [VARIABLE_DICTIONARY.md](VARIABL
 
 ### Database Setup
 
-Set `DATABASE_URL` to your database connection string. Fire Enrich supports
+Set `DATABASE_URL` to your database connection string. ReconnAIssance supports
 two engines:
 
 - **PostgreSQL** – `postgres://user:password@localhost:5432/fire_enrich`
@@ -82,7 +82,7 @@ automatically when it first runs, so no separate migration step is required.
 
 ### Architecture Overview: Following "{{SAMPLE_EMAIL}}" Through the System
 
-Let's see exactly how Fire Enrich processes a real example - enriching data for the email {{SAMPLE_EMAIL}}.
+Let's see exactly how ReconnAIssance processes a real example - enriching data for the email {{SAMPLE_EMAIL}}.
 
 ```mermaid
 graph TD
@@ -228,7 +228,7 @@ const FundingResult = z.object({
 });
 ```
 
-**To extend Fire Enrich with new data extraction capabilities:**
+**To extend ReconnAIssance with new data extraction capabilities:**
 
 1. **Add to existing agent**: Modify the Zod schema in `/lib/agent-architecture/agents/[agent-name].ts`
 2. **Create a new agent**: Define a new schema and implement the `AgentBase` interface
@@ -242,7 +242,7 @@ The field routing system automatically categorizes user requests:
 - Fields with "tech" and "stack" → Tech Stack Agent
 - Everything else → General Purpose Agent
 
-This design allows Fire Enrich to grow with your needs while maintaining type safety and predictable behavior.
+This design allows ReconnAIssance to grow with your needs while maintaining type safety and predictable behavior.
 
 ### Process Flow
 
@@ -255,7 +255,7 @@ This design allows Fire Enrich to grow with your needs while maintaining type sa
 
 ### The Multi-Agent System
 
-Fire Enrich employs a sophisticated orchestration system that coordinates specialized extraction modules. These aren't autonomous AI agents, but rather purpose-built components that work together intelligently:
+ReconnAIssance employs a sophisticated orchestration system that coordinates specialized extraction modules. These aren't autonomous AI agents, but rather purpose-built components that work together intelligently:
 
 -   **Discovery Phase**: Establishes the foundation by identifying the company and its digital presence
 -   **Profile Extraction**: Specialized logic for industry classification and business model analysis
@@ -276,7 +276,7 @@ Each module uses GPT-4o for intelligent data extraction, but follows determinist
 
 ### Configuration & Unlimited Mode
 
-When you clone and run this repository locally, Fire Enrich automatically enables **Unlimited Mode**, removing the restrictions of the public demo. You can configure these limits in [`app/fire-enrich/config.ts`](app/fire-enrich/config.ts):
+When you clone and run this repository locally, ReconnAIssance automatically enables **Unlimited Mode**, removing the restrictions of the public demo. You can configure these limits in [`app/fire-enrich/config.ts`](app/fire-enrich/config.ts):
 
 ```typescript
 const isUnlimitedMode = process.env.FIRE_ENRICH_UNLIMITED === 'true' || 
@@ -307,7 +307,7 @@ See `CONTEXT_CONFIG.md` for details on overriding global, column and row context
 
 ## Our Open Source Philosophy
 
-Let's be blunt: professional data enrichment services are expensive for a reason. Our goal with Fire Enrich isn't to replicate every feature of mature platforms overnight. Instead, we want to build a powerful, open-source foundation that anyone can use, understand, and contribute to.
+Let's be blunt: professional data enrichment services are expensive for a reason. Our goal with ReconnAIssance isn't to replicate every feature of mature platforms overnight. Instead, we want to build a powerful, open-source foundation that anyone can use, understand, and contribute to.
 
 This is just the start. By open-sourcing it, we're inviting you to join us on this journey.
 

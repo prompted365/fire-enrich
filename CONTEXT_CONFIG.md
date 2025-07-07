@@ -1,6 +1,6 @@
 # Context Configuration
 
-Fire Enrich supports different enrichment scenarios through a small configuration object.
+ReconnAIssance supports different enrichment scenarios through a small configuration object.
 
 ```ts
 import { createAgentOrchestrator } from './lib/agent-architecture';
