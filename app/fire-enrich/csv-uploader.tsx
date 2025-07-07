@@ -97,7 +97,7 @@ export function CSVUploader({ onUpload }: CSVUploaderProps) {
       <div className="text-center mb-6">
         <h2 className="text-xl font-semibold mb-1">Upload Your CSV File</h2>
         <p className="text-sm text-muted-foreground">
-          Start by uploading a CSV file containing email addresses
+          Start by uploading a CSV file with contact identifiers (emails, domains, etc.)
         </p>
       </div>
 
@@ -197,9 +197,9 @@ export function CSVUploader({ onUpload }: CSVUploaderProps) {
             <div className="w-6 h-6 bg-[#36322F] rounded flex items-center justify-center dark:bg-zinc-700">
               <span className="text-white text-xs font-bold">@</span>
             </div>
-            <h3 className="text-sm font-medium text-[#36322F] dark:text-white">Email Required</h3>
+            <h3 className="text-sm font-medium text-[#36322F] dark:text-white">Identifier Column</h3>
           </div>
-          <p className="text-xs text-muted-foreground">Must contain email addresses</p>
+          <p className="text-xs text-muted-foreground">Must include contact identifiers</p>
         </div>
         
         <div className="p-3 bg-zinc-100 rounded-lg border border-zinc-200 dark:bg-zinc-800 dark:border-zinc-700">

@@ -4,7 +4,7 @@
   <img src="https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExNjJwMnF2cW5zbXBhbGV6NXBpb3lkZmVhMWEwY3hmdmt3d3ZtbWc5YSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/QhpbWI09KyFZ0rwD72/giphy.gif" alt="ReconnAIssance Demo" width="100%" />
 </div>
 
-Turn a simple list of emails into a rich dataset with company profiles, funding data, tech stacks, and more. Powered by [{{SCRAPER_SERVICE_NAME}}](https://www.{{SCRAPER_SERVICE_DOMAIN}}/) and a multi-agent AI system.
+Turn a simple contact list into a rich dataset with company profiles, funding data, tech stacks, and more. Powered by [{{SCRAPER_SERVICE_NAME}}](https://www.{{SCRAPER_SERVICE_DOMAIN}}/) and a multi-agent AI system.
 
 ## Technologies
 
@@ -246,7 +246,7 @@ This design allows ReconnAIssance to grow with your needs while maintaining type
 
 ### Process Flow
 
-1.  **Upload & Parse**: Upload a CSV with emails. The system extracts the company domain from each email.
+1.  **Upload & Parse**: Upload a CSV with your contact identifiers (emails, domains, etc.). The system extracts useful details like company domains.
 2.  **Field Selection**: Choose the data points you need, from company descriptions to funding stages.
 3.  **Sequential Agent Execution**: Agents activate in phases, each building on previous discoveries for maximum accuracy.
 4.  **Parallel Searches Per Phase**: Within each phase, multiple searches run concurrently using the {{SCRAPER_SERVICE_NAME}} API.
