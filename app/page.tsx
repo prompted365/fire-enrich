@@ -197,12 +197,12 @@ export default function HomePage() {
   return (
     <div className="px-4 sm:px-6 lg:px-8 py-4 max-w-7xl mx-auto font-inter">
       <div className="flex justify-between items-center">
-        <Link href="https://www.firecrawl.dev/?utm_source=tool-csv-enrichment" target="_blank" rel="noopener noreferrer">
+        <Link href="/" className="logo-reveal">
           <Image
-            src="/firecrawl-logo-with-fire.png"
-            alt="Firecrawl Logo"
-            width={113}
-            height={24}
+            src="/reconnaissance-logo.svg"
+            alt="ReconnAIssance Logo"
+            width={180}
+            height={32}
           />
         </Link>
         <Button
@@ -226,7 +226,7 @@ export default function HomePage() {
       <div className="text-center pt-8 pb-6">
         <h1 className="text-[2.5rem] lg:text-[3.8rem] text-[#36322F] dark:text-white font-semibold tracking-tight leading-[0.9] opacity-0 animate-fade-up [animation-duration:500ms] [animation-delay:200ms] [animation-fill-mode:forwards]">
           <span className="relative px-1 text-transparent bg-clip-text bg-gradient-to-tr from-red-600 to-yellow-500 inline-flex justify-center items-center">
-            Fire Enrich
+            ReconnAIssance
           </span>
           <span className="block leading-[1.1] opacity-0 animate-fade-up [animation-duration:500ms] [animation-delay:400ms] [animation-fill-mode:forwards]">
             Drag, Drop, Enrich.
@@ -247,7 +247,7 @@ export default function HomePage() {
           <p className="text-sm text-muted-foreground">Initializing...</p>
         </div>
       ) : (
-        <div className="bg-[#FBFAF9] p-4 sm:p-6 rounded-lg shadow-sm">
+        <div className="bg-white/70 dark:bg-zinc-900/40 backdrop-blur-lg p-6 sm:p-8 rounded-2xl shadow-lg">
         {step === 'setup' && (
           <Button
             variant="code"
@@ -299,12 +299,7 @@ export default function HomePage() {
       )}
 
       <footer className="py-8 text-center text-sm text-gray-600 dark:text-gray-400">
-        <p>
-          Powered by{' '}
-          <Link href="https://www.firecrawl.dev" target="_blank" rel="noopener noreferrer" className="text-orange-600 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300 font-medium">
-            Firecrawl
-          </Link>
-        </p>
+        <p className="opacity-75">Made with ❤️ by the ReconnAIssance team</p>
       </footer>
 
       {/* API Key Modal */}
@@ -313,7 +308,7 @@ export default function HomePage() {
           <DialogHeader>
             <DialogTitle>API Keys Required</DialogTitle>
             <DialogDescription>
-              This tool requires API keys for Firecrawl and OpenAI to enrich your CSV data.
+              This tool requires API keys for our crawler service and OpenAI to enrich your CSV data.
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-4 py-4">
@@ -326,11 +321,11 @@ export default function HomePage() {
                   className="flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <ExternalLink className="h-4 w-4" />
-                  Get Firecrawl API Key
+                  Get Crawler API Key
                 </Button>
                 <div className="flex flex-col gap-2">
                   <label htmlFor="firecrawl-key" className="text-sm font-medium">
-                    Firecrawl API Key
+                    Crawler API Key
                   </label>
                   <Input
                     id="firecrawl-key"
