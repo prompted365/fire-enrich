@@ -293,6 +293,9 @@ export const FIRE_ENRICH_CONFIG = {
 } as const;
 ```
 
+Additional context behavior can be customized using a small configuration object.
+See `CONTEXT_CONFIG.md` for details on overriding global, column and row context.
+
 ### Embedding Results
 
 1. After your enrichment session finishes, click the **Embed** button above the results table.

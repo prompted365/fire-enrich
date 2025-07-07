@@ -3,12 +3,15 @@ import { z } from 'zod';
 import { zodResponseFormat } from 'openai/helpers/zod';
 import type { EnrichmentField, EnrichmentResult, MessageParams } from '../types';
 import { MESSAGE_TEMPLATES } from '../templates/message-templates';
+import type { ContextConfig } from '../config/context-config';
 
 export class OpenAIService {
   private client: OpenAI;
+  private contextConfig?: ContextConfig;
 
-  constructor(apiKey: string) {
+  constructor(apiKey: string, contextConfig?: ContextConfig) {
     this.client = new OpenAI({ apiKey });
+    this.contextConfig = contextConfig;
   }
 
   createEnrichmentSchema(fields: EnrichmentField[]) {
@@ -112,20 +115,19 @@ export class OpenAIService {
     try {
       const schema = this.createEnrichmentSchema(fields);
       const fieldDescriptions = fields
-        .map(f => `- ${f.name}: ${f.description}`)
+        .map(f => {
+          const override = this.contextConfig?.columnInstructions?.[f.name];
+          const desc = override || f.description;
+          return `- ${f.name}: ${desc}`;
+        })
         .join('\n');
 
       // Format context to emphasize company identity
       
       const contextInfo = Object.entries(context)
         .map(([key, value]) => {
-          if (key === 'targetDomain' && value) {
-            return `Company Domain: ${value} (if you see content from this domain, it's likely the target company)`;
-          }
-          if (key === 'name' || key === '_parsed_name') {
-            return `Person Name: ${value}`;
-          }
-          return `${key}: ${value}`;
+          const label = this.contextConfig?.rowContextMappings?.[key] || key;
+          return `${label}: ${value}`;
         })
         .filter(line => !line.includes('undefined'))
         .join('\n');
@@ -144,7 +146,7 @@ export class OpenAIService {
         messages: [
           {
             role: 'system',
-            content: `You are an expert data extractor. Extract the requested information from the provided content with high accuracy.
+            content: `${this.contextConfig?.globalInstructions || ''}\nYou are an expert data extractor. Extract the requested information from the provided content with high accuracy.
             
 **CRITICAL RULE**: You MUST ONLY extract information that is EXPLICITLY STATED in the provided content. DO NOT make up, guess, or infer any values. If the information is not clearly present in the text, you MUST return null.
 
@@ -341,20 +343,19 @@ DOMAIN PARKING/SALE PAGES:
       
       const schema = this.createCorroboratedEnrichmentSchema(fields);
       const fieldDescriptions = fields
-        .map(f => `- ${f.name}: ${f.description}`)
+        .map(f => {
+          const override = this.contextConfig?.columnInstructions?.[f.name];
+          const desc = override || f.description;
+          return `- ${f.name}: ${desc}`;
+        })
         .join('\n');
 
       // Format context to emphasize company identity
       
       const contextInfo = Object.entries(context)
         .map(([key, value]) => {
-          if (key === 'targetDomain' && value) {
-            return `Company Domain: ${value} (if you see content from this domain, it's likely the target company)`;
-          }
-          if (key === 'name' || key === '_parsed_name') {
-            return `Person Name: ${value}`;
-          }
-          return `${key}: ${value}`;
+          const label = this.contextConfig?.rowContextMappings?.[key] || key;
+          return `${label}: ${value}`;
         })
         .filter(line => !line.includes('undefined'))
         .join('\n');
@@ -379,7 +380,7 @@ DOMAIN PARKING/SALE PAGES:
         messages: [
           {
             role: 'system',
-            content: `You are an expert data extractor. Extract information with evidence from each source.
+            content: `${this.contextConfig?.globalInstructions || ''}\nYou are an expert data extractor. Extract information with evidence from each source.
 
 **CRITICAL INSTRUCTIONS**:
 1. For EACH field, find ALL mentions across ALL sources
@@ -759,7 +760,7 @@ REMEMBER: Extract exact_text from the "=== ACTUAL CONTENT BELOW ===" section, NO
         messages: [
           {
             role: 'system',
-            content: `Extract structured data based on the prompt. Return valid JSON matching this schema:
+            content: `${this.contextConfig?.globalInstructions || ''}\nExtract structured data based on the prompt. Return valid JSON matching this schema:
 ${schemaDescription}
 
 **CRITICAL RULES**:

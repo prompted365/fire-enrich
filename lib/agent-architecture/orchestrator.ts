@@ -3,11 +3,13 @@ import { EnrichmentResult, SearchResult, EnrichmentField } from '../types';
 import { parseEmail } from '../strategies/email-parser';
 import { FirecrawlService } from '../services/firecrawl';
 import { OpenAIService } from '../services/openai';
+import type { ContextConfig } from '../config/context-config';
 import type { EnrichmentMetrics } from '../services/feedback';
 
 export class AgentOrchestrator {
   private firecrawl: FirecrawlService;
   private openai: OpenAIService;
+  private contextConfig?: ContextConfig;
   private agentOrder: Array<'discovery' | 'profile' | 'metrics' | 'funding' | 'techStack' | 'other'> = [
     'discovery',
     'profile',
@@ -20,10 +22,12 @@ export class AgentOrchestrator {
   
   constructor(
     private firecrawlApiKey: string,
-    private openaiApiKey: string
+    private openaiApiKey: string,
+    contextConfig?: ContextConfig
   ) {
     this.firecrawl = new FirecrawlService(firecrawlApiKey);
-    this.openai = new OpenAIService(openaiApiKey);
+    this.openai = new OpenAIService(openaiApiKey, contextConfig);
+    this.contextConfig = contextConfig;
   }
 
   updateStrategiesFromMetrics(metrics: EnrichmentMetrics) {
