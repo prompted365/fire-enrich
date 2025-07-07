@@ -4,12 +4,13 @@ import { shouldSkipEmail, loadSkipList, getSkipReason } from '../utils/skip-list
 
 export class AgentEnrichmentStrategy {
   private orchestrator: AgentOrchestrator;
-  
+
   constructor(
     openaiApiKey: string,
     firecrawlApiKey: string,
+    contextConfig?: import('../config/context-config').ContextConfig
   ) {
-    this.orchestrator = new AgentOrchestrator(firecrawlApiKey, openaiApiKey);
+    this.orchestrator = new AgentOrchestrator(firecrawlApiKey, openaiApiKey, contextConfig);
   }
 
   updateStrategiesFromMetrics(metrics: import('../services/feedback').EnrichmentMetrics) {
