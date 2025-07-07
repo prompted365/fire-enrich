@@ -461,7 +461,7 @@ export function EnrichmentTable({ rows, fields, emailColumn }: EnrichmentTablePr
 
   return (
     <div className="space-y-4">
-      <Card className="p-4 bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800">
+      <Card className="p-4 bg-background dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-6">
             {/* Progress indicator */}
@@ -580,7 +580,7 @@ export function EnrichmentTable({ rows, fields, emailColumn }: EnrichmentTablePr
 
       {/* Agent Progress Messages */}
       {agentMessages.length > 0 && (
-        <Card className="p-3 bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800">
+        <Card className="p-3 bg-background dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800">
           <h4 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2">
             Agent Activity Log
           </h4>
@@ -614,16 +614,16 @@ export function EnrichmentTable({ rows, fields, emailColumn }: EnrichmentTablePr
         </Card>
       )}
 
-      <div className="overflow-hidden rounded-lg shadow-sm border border-gray-200">
-        <div className="overflow-x-auto bg-white">
+      <div className="overflow-hidden rounded-lg shadow-sm border border-border">
+        <div className="overflow-x-auto bg-background">
           <table className="min-w-full relative">
           <thead>
             <tr className="border-b-2 border-orange-100">
-              <th className="sticky left-0 z-10 bg-white dark:bg-zinc-900 px-4 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300 border-r-2 border-orange-400 shadow-[2px_0_8px_rgba(251,146,60,0.3)]">
+              <th className="sticky left-0 z-10 bg-background dark:bg-zinc-900 px-4 py-3 text-left text-sm font-semibold text-foreground dark:text-muted-foreground border-r-2 border-orange-400 shadow-[2px_0_8px_rgba(251,146,60,0.3)]">
                 {emailColumn || 'Email'}
               </th>
               {fields.map(field => (
-                <th key={field.name} className="px-4 py-3 text-left text-sm font-medium text-gray-700 bg-gray-50">
+                <th key={field.name} className="px-4 py-3 text-left text-sm font-medium text-foreground bg-muted">
                   {field.displayName}
                 </th>
               ))}
@@ -637,13 +637,13 @@ export function EnrichmentTable({ rows, fields, emailColumn }: EnrichmentTablePr
               return (
                 <tr key={index} className={`
                   ${isProcessing ? 'animate-processing-row' : 
-                    index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'} 
+                    index % 2 === 0 ? 'bg-background' : 'bg-muted/50'} 
                   hover:bg-orange-50/50 transition-all duration-300 group
                 `}>
                   <td className={`
                     sticky left-0 z-10 px-4 py-2 text-sm font-medium
                     ${isProcessing ? 'bg-orange-50 dark:bg-orange-950/10' : 
-                      'bg-white dark:bg-zinc-900'}
+                      'bg-background dark:bg-zinc-900'}
                     border-r-2 border-orange-400 shadow-[2px_0_8px_rgba(251,146,60,0.3)]
                   `}>
                     <div className="space-y-1">
@@ -670,19 +670,19 @@ export function EnrichmentTable({ rows, fields, emailColumn }: EnrichmentTablePr
                           </div>
                         )}
                         <div className="flex items-center gap-1">
-                          <div className="text-gray-800 font-mono text-sm truncate max-w-[180px]">
+                          <div className="text-foreground font-mono text-sm truncate max-w-[180px]">
                             {emailColumn ? row[emailColumn] : Object.values(row)[0]}
                           </div>
                           {/* Show additional columns if CSV has many columns */}
                           {Object.keys(row).length > fields.length + 1 && (
-                            <div className="flex items-center gap-1 text-xs text-gray-500">
+                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
                               {Object.keys(row).slice(1, 3).map((key, idx) => (
                                 <span key={idx} className="truncate max-w-[60px]" title={row[key]}>
                                   {idx > 0 && ', '}{row[key]}
                                 </span>
                               ))}
                               {Object.keys(row).length > 3 && (
-                                <span className="text-gray-400 font-medium">
+                                <span className="text-muted-foreground font-medium">
                                   +{Object.keys(row).length - 3} more
                                 </span>
                               )}
@@ -705,13 +705,13 @@ export function EnrichmentTable({ rows, fields, emailColumn }: EnrichmentTablePr
                   {result?.status === 'skipped' ? (
                     <td 
                       colSpan={fields.length}
-                      className="px-4 py-3 text-sm border-l border-gray-100 bg-gray-50"
+                      className="px-4 py-3 text-sm border-l border-border bg-muted"
                     >
                       <div className="flex flex-col items-start gap-1">
-                        <span className="inline-flex items-center px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">
+                        <span className="inline-flex items-center px-2 py-1 bg-muted text-muted-foreground rounded-full text-xs font-medium">
                           Skipped
                         </span>
-                        <span className="text-xs text-gray-500">
+                        <span className="text-xs text-muted-foreground">
                           {result.error || 'Personal email provider'}
                         </span>
                       </div>
@@ -731,7 +731,7 @@ export function EnrichmentTable({ rows, fields, emailColumn }: EnrichmentTablePr
                       return (
                         <td 
                           key={field.name} 
-                          className="px-4 py-2 text-sm relative border-l border-gray-100"
+                          className="px-4 py-2 text-sm relative border-l border-border"
                         >
                           {!result ? (
                             <div className="animate-slow-pulse">
@@ -755,7 +755,7 @@ export function EnrichmentTable({ rows, fields, emailColumn }: EnrichmentTablePr
                               animationTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)'
                             } : {}}
                           >
-                            <span className="flex items-center gap-1 text-gray-400">
+                            <span className="flex items-center gap-1 text-muted-foreground">
                               <X size={16} />
                               <span className="text-xs">No information found</span>
                             </span>
@@ -771,7 +771,7 @@ export function EnrichmentTable({ rows, fields, emailColumn }: EnrichmentTablePr
                             } : {}}
                           >
                             <div className="flex flex-col gap-1">
-                              <div className="font-medium text-gray-800">
+                              <div className="font-medium text-foreground">
                                 {field.type === 'boolean' ? (
                                   <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full ${
                                     enrichment.value === true || enrichment.value === 'true' || enrichment.value === 'Yes' 
@@ -788,7 +788,7 @@ export function EnrichmentTable({ rows, fields, emailColumn }: EnrichmentTablePr
                                       </span>
                                     ))}
                                     {enrichment.value.length > 2 && (
-                                      <span className="text-xs text-gray-500 font-medium"> +{enrichment.value.length - 2} more</span>
+                                      <span className="text-xs text-muted-foreground font-medium"> +{enrichment.value.length - 2} more</span>
                                     )}
                                   </div>
                                 ) : (
@@ -828,7 +828,7 @@ export function EnrichmentTable({ rows, fields, emailColumn }: EnrichmentTablePr
         open={selectedRow.isOpen} 
         onOpenChange={(open) => setSelectedRow({ ...selectedRow, isOpen: open })}
       >
-        <SheetContent className="w-[550px] sm:max-w-[550px] overflow-y-auto bg-white dark:bg-zinc-900 border-l-2 border-zinc-200 dark:border-zinc-800 px-8">
+        <SheetContent className="w-[550px] sm:max-w-[550px] overflow-y-auto bg-background dark:bg-zinc-900 border-l-2 border-zinc-200 dark:border-zinc-800 px-8">
           {selectedRow.row && (
             <>
               <SheetHeader className="pb-4 border-b border-zinc-200 dark:border-zinc-800">
@@ -949,7 +949,7 @@ export function EnrichmentTable({ rows, fields, emailColumn }: EnrichmentTablePr
                                   {enrichment.corroboration.evidence
                                     .filter(e => e.value !== null)
                                     .map((evidence, idx) => (
-                                      <div key={idx} className="bg-gray-50 dark:bg-zinc-900 rounded p-2 space-y-1">
+                                      <div key={idx} className="bg-muted dark:bg-zinc-900 rounded p-2 space-y-1">
                                         <div className="flex items-start justify-between gap-2">
                                           <a
                                             href={evidence.source_url}
@@ -961,11 +961,11 @@ export function EnrichmentTable({ rows, fields, emailColumn }: EnrichmentTablePr
                                           </a>
                                         </div>
                                         {evidence.exact_text && (
-                                          <p className="text-xs text-gray-600 italic">
+                                          <p className="text-xs text-muted-foreground italic">
                                             &quot;{evidence.exact_text}&quot;
                                           </p>
                                         )}
-                                        <p className="text-xs font-medium text-gray-800">
+                                        <p className="text-xs font-medium text-foreground">
                                           Found: {JSON.stringify(evidence.value)}
                                         </p>
                                       </div>
@@ -1122,41 +1122,41 @@ export function EnrichmentTable({ rows, fields, emailColumn }: EnrichmentTablePr
         if (skippedResults.length === 0) return null;
         
         return (
-          <Card className="p-4 bg-gray-50 dark:bg-zinc-900 border-gray-200 dark:border-zinc-800 mt-4">
+          <Card className="p-4 bg-muted dark:bg-zinc-900 border-border dark:border-zinc-800 mt-4">
             <button
               onClick={() => setShowSkipped(!showSkipped)}
               className="w-full flex items-center justify-between text-left"
             >
               <div className="flex items-center gap-2">
-                <Badge variant="secondary" className="bg-gray-200 text-gray-700">
+                <Badge variant="secondary" className="bg-muted text-foreground">
                   {skippedResults.length} Skipped
                 </Badge>
-                <span className="text-sm text-gray-600 dark:text-gray-400">
+                <span className="text-sm text-muted-foreground dark:text-muted-foreground">
                   Common email providers and domains excluded from enrichment
                 </span>
               </div>
               {showSkipped ? (
-                <ChevronUp className="w-4 h-4 text-gray-400" />
+                <ChevronUp className="w-4 h-4 text-muted-foreground" />
               ) : (
-                <ChevronDown className="w-4 h-4 text-gray-400" />
+                <ChevronDown className="w-4 h-4 text-muted-foreground" />
               )}
             </button>
             
             {showSkipped && (
               <div className="mt-4 space-y-2">
-                <div className="text-xs text-gray-500 mb-2">
+                <div className="text-xs text-muted-foreground mb-2">
                   These emails were skipped to save API calls and processing time:
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
                   {skippedResults.map(({ index, email, reason }) => (
                     <div
                       key={index}
-                      className="flex items-center justify-between bg-white dark:bg-zinc-800 rounded-md px-3 py-2 text-sm"
+                      className="flex items-center justify-between bg-background dark:bg-zinc-800 rounded-md px-3 py-2 text-sm"
                     >
-                      <span className="font-mono text-gray-700 dark:text-gray-300 truncate">
+                      <span className="font-mono text-foreground dark:text-muted-foreground truncate">
                         {email}
                       </span>
-                      <span className="text-xs text-gray-500 ml-2">
+                      <span className="text-xs text-muted-foreground ml-2">
                         {reason}
                       </span>
                     </div>

@@ -206,7 +206,7 @@ export function UnifiedEnrichmentView({ rows, columns, onStartEnrichment }: Unif
                   </TableHead>
                 ))}
                 {step >= 2 && selectedFields.length > maxVisibleFields && (
-                  <TableHead className="text-center text-gray-500 animate-in fade-in duration-700">
+                  <TableHead className="text-center text-muted-foreground animate-in fade-in duration-700">
                     +{selectedFields.length - maxVisibleFields} more
                   </TableHead>
                 )}
@@ -234,7 +234,7 @@ export function UnifiedEnrichmentView({ rows, columns, onStartEnrichment }: Unif
                         >
                           <span className={cn(
                             "text-sm truncate block max-w-[200px] font-mono font-bold",
-                            isValidEmail ? "text-zinc-900 dark:text-zinc-100" : email ? "text-red-600" : "text-gray-400"
+                            isValidEmail ? "text-zinc-900 dark:text-zinc-100" : email ? "text-red-600" : "text-muted-foreground"
                           )}>
                             {email || '-'}
                           </span>
@@ -250,7 +250,7 @@ export function UnifiedEnrichmentView({ rows, columns, onStartEnrichment }: Unif
                           step >= 2 && "opacity-30"
                         )}
                       >
-                        <span className="text-sm truncate block max-w-[150px] text-gray-600">
+                        <span className="text-sm truncate block max-w-[150px] text-muted-foreground">
                           {cellValue || '-'}
                         </span>
                       </TableCell>
@@ -273,7 +273,7 @@ export function UnifiedEnrichmentView({ rows, columns, onStartEnrichment }: Unif
                     </TableCell>
                   ))}
                   {step >= 2 && selectedFields.length > maxVisibleFields && (
-                    <TableCell className="text-center text-gray-400 animate-in fade-in duration-700">
+                    <TableCell className="text-center text-muted-foreground animate-in fade-in duration-700">
                       ...
                     </TableCell>
                   )}
