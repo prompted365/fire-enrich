@@ -4,7 +4,7 @@ A powerful AI-powered CSV enrichment tool that transforms basic contact lists in
 
 ## Overview
 
-ReconnAIssance is an advanced data enrichment platform that takes CSV files containing company email addresses and automatically enhances them with valuable business information. Built on a sophisticated multi-agent architecture, it leverages {{SCRAPER_SERVICE_NAME}} for web scraping and OpenAI GPT-4 for intelligent data extraction.
+ReconnAIssance is an advanced data enrichment platform that accepts CSV files with contact identifiers (such as company emails or domains) and automatically enhances them with valuable business information. Built on a sophisticated multi-agent architecture, it leverages {{SCRAPER_SERVICE_NAME}} for web scraping and OpenAI GPT-4 for intelligent data extraction.
 
 ## Architecture
 
@@ -48,20 +48,20 @@ ReconnAIssance employs five specialized AI agents, each optimized for specific d
 
 #### Step 1: CSV Upload
 ```
-User uploads CSV → Parse with Papa Parse → Auto-detect email columns → 
+User uploads CSV → Parse with Papa Parse → Auto-detect identifier columns (e.g., email) →
 Extract unique domains → Preview data structure
 ```
 
 #### Step 2: Field Configuration
 ```
-Select email column → Choose enrichment fields → Add custom fields →
+Select identifier column → Choose enrichment fields → Add custom fields →
 Toggle agent mode → Preview enrichment plan
 ```
 
 #### Step 3: Real-time Enrichment
 ```
 For each row:
-├─ Extract company from email
+├─ Extract company from identifier (email domain or similar)
 ├─ Generate search queries
 ├─ Scrape multiple sources (Firecrawl)
 ├─ Select specialized agents
@@ -133,8 +133,8 @@ If you prefer not to use environment variables, ReconnAIssance supports entering
 
 ## Features
 
-### Smart Email Detection
-- Regex-based email column detection
+### Smart Identifier Detection
+- Regex-based identifier column detection (emails, domains)
 - Domain extraction with edge case handling
 - Company name inference from email patterns
 
