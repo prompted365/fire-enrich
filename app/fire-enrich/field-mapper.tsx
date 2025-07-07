@@ -175,7 +175,7 @@ export function FieldMapper({ onFieldsSelected }: FieldMapperProps) {
         
         {/* Preset fields */}
         <div className="mb-2">
-          <p className="text-xs text-gray-600 mb-1">Quick add fields:</p>
+          <p className="text-xs text-muted-foreground mb-1">Quick add fields:</p>
           <div className="flex flex-wrap gap-1.5">
             {PRESET_FIELDS.map(preset => {
               const isSelected = selectedFields.find(f => f.displayName === preset.displayName) !== undefined;
@@ -186,7 +186,7 @@ export function FieldMapper({ onFieldsSelected }: FieldMapperProps) {
                   disabled={isSelected}
                   className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium transition-all ${
                     isSelected
-                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                      ? 'bg-muted text-muted-foreground cursor-not-allowed'
                       : 'bg-orange-100 text-orange-900 hover:bg-orange-200'
                   }`}
                 >
@@ -206,7 +206,7 @@ export function FieldMapper({ onFieldsSelected }: FieldMapperProps) {
         {showSuggestions && suggestedFields.length > 0 && (
           <div className="mb-2 p-3 bg-orange-50 rounded-lg border border-orange-200">
             <div className="flex items-center justify-between mb-2">
-              <h4 className="text-sm font-semibold text-gray-900">Suggested Fields</h4>
+              <h4 className="text-sm font-semibold text-foreground">Suggested Fields</h4>
               <div className="flex gap-2">
                 <Button
                   onClick={() => {
@@ -215,7 +215,7 @@ export function FieldMapper({ onFieldsSelected }: FieldMapperProps) {
                   }}
                   variant="outline"
                   size="sm"
-                  className="h-7 px-3 text-xs border-gray-300 hover:bg-gray-100"
+                  className="h-7 px-3 text-xs border-border hover:bg-muted"
                 >
                   Cancel All
                 </Button>
@@ -231,11 +231,11 @@ export function FieldMapper({ onFieldsSelected }: FieldMapperProps) {
             </div>
             <div className="space-y-1.5">
               {suggestedFields.map((field, index) => (
-                <div key={index} className="p-2.5 bg-white rounded-md border border-gray-200">
+                <div key={index} className="p-2.5 bg-background rounded-md border border-border">
                   <div className="flex items-start gap-2">
                     <div className="flex-1">
-                      <div className="font-medium text-sm text-gray-900">{field.displayName}</div>
-                      <div className="text-xs text-gray-600 mt-0.5">{field.description}</div>
+                      <div className="font-medium text-sm text-foreground">{field.displayName}</div>
+                      <div className="text-xs text-muted-foreground mt-0.5">{field.description}</div>
                     </div>
                     <div className="flex gap-0.5">
                       <button
@@ -298,7 +298,7 @@ export function FieldMapper({ onFieldsSelected }: FieldMapperProps) {
               <span title={field.description}>{field.displayName}</span>
               <button
                 onClick={() => removeField(field.name)}
-                className="ml-1 -mr-0.5 inline-flex items-center justify-center w-4 h-4 text-gray-400 hover:text-white hover:bg-gray-700 rounded-full transition-colors"
+                className="ml-1 -mr-0.5 inline-flex items-center justify-center w-4 h-4 text-muted-foreground hover:text-white hover:bg-gray-700 rounded-full transition-colors"
               >
                 <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
@@ -314,7 +314,7 @@ export function FieldMapper({ onFieldsSelected }: FieldMapperProps) {
         <div className="border-t pt-2">
           {/* Natural Language Input */}
           <div className="mb-2">
-            <p className="text-xs text-gray-600 mb-1">Describe fields you want to collect:</p>
+            <p className="text-xs text-muted-foreground mb-1">Describe fields you want to collect:</p>
             <div className="flex gap-1">
               <Input
                 type="text"
@@ -343,7 +343,7 @@ export function FieldMapper({ onFieldsSelected }: FieldMapperProps) {
           </div>
           
           {/* Custom field */}
-          <p className="text-xs text-gray-600 mb-1">Or add custom field:</p>
+          <p className="text-xs text-muted-foreground mb-1">Or add custom field:</p>
           <div className="grid grid-cols-3 gap-1">
             <Input
               type="text"

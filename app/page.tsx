@@ -302,7 +302,7 @@ export default function HomePage() {
         </div>
       )}
 
-      <footer className="py-8 text-center text-sm text-gray-600 dark:text-gray-400">
+      <footer className="py-8 text-center text-sm text-muted-foreground dark:text-muted-foreground">
         <p className="opacity-75">Made with ❤️ by the ReconnAIssance team</p>
       </footer>
 

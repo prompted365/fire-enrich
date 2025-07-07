@@ -91,7 +91,7 @@ export function SourceContextTooltip({ sources, legacySource, sourceCount, corro
             window.dispatchEvent(new CustomEvent('close-other-tooltips', { detail: { excludeRef: buttonRef.current } }));
           }
         }}
-        className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors whitespace-nowrap"
+        className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-muted text-muted-foreground hover:bg-muted transition-colors whitespace-nowrap"
         title={hasSnippets ? "View source quotes" : "View sources"}
       >
         <ExternalLink className="w-3 h-3 mr-0.5" />
@@ -104,7 +104,7 @@ export function SourceContextTooltip({ sources, legacySource, sourceCount, corro
       {isExpanded && (
         <div 
           ref={modalRef}
-          className="absolute z-[9999] bg-white border border-gray-200 rounded-lg shadow-lg p-3 space-y-2 max-w-md left-0 mt-2" 
+          className="absolute z-[9999] bg-white border border-border rounded-lg shadow-lg p-3 space-y-2 max-w-md left-0 mt-2" 
           style={{ 
             minWidth: '300px',
             // Position above if near bottom of viewport
@@ -125,9 +125,9 @@ export function SourceContextTooltip({ sources, legacySource, sourceCount, corro
                          : '0'
           }}>
           
-          <div className="mb-2 pb-2 border-b border-gray-100">
+          <div className="mb-2 pb-2 border-b border-border">
             <div className="flex items-center justify-between">
-              <h4 className="text-xs font-semibold text-gray-700">
+              <h4 className="text-xs font-semibold text-muted-foreground">
                 Found in {displaySources.length} {displaySources.length === 1 ? 'source' : 'sources'}
               </h4>
               {confidence && (
@@ -151,11 +151,11 @@ export function SourceContextTooltip({ sources, legacySource, sourceCount, corro
           
           <div className="max-h-64 overflow-y-auto space-y-3">
             {displaySources.map((source, idx) => (
-              <div key={idx} className="border border-gray-100 rounded-lg p-3 hover:border-gray-200 transition-colors">
+              <div key={idx} className="border border-border rounded-lg p-3 hover:border-border transition-colors">
                 {source.snippet && source.snippet.length > 0 ? (
                   <div>
                     {source.snippet && source.snippet.trim() !== '' && (
-                      <p className="text-xs text-gray-700 mb-2 italic leading-relaxed">
+                      <p className="text-xs text-muted-foreground mb-2 italic leading-relaxed">
                         &quot;{source.snippet}&quot;
                       </p>
                     )}

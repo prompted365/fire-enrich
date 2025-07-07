@@ -55,7 +55,7 @@ export function DetailModal({ isOpen, onClose, row, result, fields, emailColumn 
                   href={websiteUrl.startsWith('http') ? websiteUrl : `https://${websiteUrl}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-gray-300 hover:text-white text-xs mt-0.5 transition-colors ml-3"
+                  className="inline-flex items-center gap-1 text-muted-foreground hover:text-white text-xs mt-0.5 transition-colors ml-3"
                 >
                   <ExternalLink className="w-3 h-3" />
                   Visit Website
@@ -69,8 +69,8 @@ export function DetailModal({ isOpen, onClose, row, result, fields, emailColumn 
           {/* Email and Basic Info */}
           <div className="mb-4">
             <div className="flex items-center gap-2">
-              <Mail className="w-4 h-4 text-gray-400" />
-              <span className="text-gray-900 font-medium text-sm">{emailColumn ? row[emailColumn] : Object.values(row)[0]}</span>
+              <Mail className="w-4 h-4 text-muted-foreground" />
+              <span className="text-foreground font-medium text-sm">{emailColumn ? row[emailColumn] : Object.values(row)[0]}</span>
             </div>
           </div>
           
@@ -88,9 +88,9 @@ export function DetailModal({ isOpen, onClose, row, result, fields, emailColumn 
                   }
                   
                   return (
-                    <div key={field.name} className="bg-gray-50 rounded-lg p-3">
+                    <div key={field.name} className="bg-muted rounded-lg p-3">
                       <div className="flex items-start justify-between mb-2">
-                        <h4 className="font-medium text-gray-900 text-sm">{field.displayName}</h4>
+                        <h4 className="font-medium text-foreground text-sm">{field.displayName}</h4>
                         <div className="flex items-center gap-2">
                           {(enrichment.source || enrichment.sourceContext) && (
                             <div className="flex flex-wrap gap-1">
@@ -101,7 +101,7 @@ export function DetailModal({ isOpen, onClose, row, result, fields, emailColumn 
                                     href={ctx.url}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-gray-200 text-gray-600 hover:bg-gray-300"
+                                    className="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-muted text-muted-foreground hover:bg-muted"
                                     title={ctx.snippet || 'View source'}
                                   >
                                     <ExternalLink className="w-3 h-3 mr-0.5" />
@@ -115,7 +115,7 @@ export function DetailModal({ isOpen, onClose, row, result, fields, emailColumn 
                                     href={url}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-gray-200 text-gray-600 hover:bg-gray-300"
+                                    className="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-muted text-muted-foreground hover:bg-muted"
                                   >
                                     <ExternalLink className="w-3 h-3 mr-0.5" />
                                     {(() => {
@@ -132,7 +132,7 @@ export function DetailModal({ isOpen, onClose, row, result, fields, emailColumn 
                           )}
                         </div>
                       </div>
-                      <div className="text-gray-700 text-sm">
+                      <div className="text-muted-foreground text-sm">
                         {field.type === 'boolean' ? (
                           <div className="flex items-center gap-1">
                             {enrichment.value === true || enrichment.value === 'true' || enrichment.value === 'Yes' ? (
@@ -175,7 +175,7 @@ export function DetailModal({ isOpen, onClose, row, result, fields, emailColumn 
                 return (
                   <div key={field.name} className="mt-4 bg-blue-50 rounded-lg p-4">
                     <div className="flex items-start justify-between mb-2">
-                      <h4 className="font-medium text-gray-900 text-sm">
+                      <h4 className="font-medium text-foreground text-sm">
                         {field.displayName}
                       </h4>
                       {enrichment.source && (
@@ -186,7 +186,7 @@ export function DetailModal({ isOpen, onClose, row, result, fields, emailColumn 
                               href={url} 
                               target="_blank" 
                               rel="noopener noreferrer"
-                              className="block text-gray-600 hover:text-blue-600"
+                              className="block text-muted-foreground hover:text-blue-600"
                             >
                               {(() => {
                                 try {
@@ -200,7 +200,7 @@ export function DetailModal({ isOpen, onClose, row, result, fields, emailColumn 
                         </div>
                       )}
                     </div>
-                    <p className="text-gray-700 text-sm leading-relaxed">{enrichment.value}</p>
+                    <p className="text-muted-foreground text-sm leading-relaxed">{enrichment.value}</p>
                   </div>
                 );
               })}
@@ -209,15 +209,15 @@ export function DetailModal({ isOpen, onClose, row, result, fields, emailColumn 
           
           {/* Original Data Section - Collapsed by default */}
           <details className="mt-4 border-t pt-3">
-            <summary className="cursor-pointer text-xs font-medium text-gray-600 hover:text-gray-900 flex items-center gap-1">
+            <summary className="cursor-pointer text-xs font-medium text-muted-foreground hover:text-foreground flex items-center gap-1">
               <ChevronDown className="w-3 h-3" />
               View Original Data
             </summary>
-            <div className="mt-2 bg-gray-50 rounded p-2 space-y-1">
+            <div className="mt-2 bg-muted rounded p-2 space-y-1">
               {Object.entries(row).map(([key, value]) => (
                 <div key={key} className="flex text-xs">
-                  <span className="font-medium text-gray-600 w-28">{key}:</span>
-                  <span className="text-gray-900">{value}</span>
+                  <span className="font-medium text-muted-foreground w-28">{key}:</span>
+                  <span className="text-foreground">{value}</span>
                 </div>
               ))}
             </div>

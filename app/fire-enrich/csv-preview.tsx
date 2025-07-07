@@ -56,7 +56,7 @@ export function CSVPreview({ rows, columns, onEmailColumnConfirmed }: CSVPreview
         )}
         
         <div className="flex items-center gap-2 ml-auto">
-          <label className="text-xs font-medium text-gray-700">
+          <label className="text-xs font-medium text-muted-foreground">
             Select email column:
           </label>
           <Select value={selectedColumn} onValueChange={setSelectedColumn}>
@@ -76,18 +76,18 @@ export function CSVPreview({ rows, columns, onEmailColumnConfirmed }: CSVPreview
 
       <div>
         <h3 className="text-sm font-semibold mb-2">Preview (First 5 Rows)</h3>
-        <div className="border border-gray-200 rounded overflow-hidden">
+        <div className="border border-border rounded overflow-hidden">
           <div className="overflow-x-auto max-h-60">
-            <table className="min-w-full divide-y divide-gray-200 text-xs">
-              <thead className="bg-gray-50 sticky top-0">
+            <table className="min-w-full divide-y divide-border text-xs">
+              <thead className="bg-muted sticky top-0">
                 <tr>
                   {columns.map((column) => (
                     <th
                       key={column}
                       className={`px-3 py-2 text-left font-medium uppercase tracking-wider ${
                         column === selectedColumn
-                          ? 'text-black bg-gray-100'
-                          : 'text-gray-500'
+                          ? 'text-foreground bg-muted'
+                          : 'text-muted-foreground'
                       }`}
                     >
                       {column}
@@ -98,16 +98,16 @@ export function CSVPreview({ rows, columns, onEmailColumnConfirmed }: CSVPreview
                   ))}
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-background divide-y divide-border">
                 {previewRows.map((row, index) => (
-                  <tr key={index} className="hover:bg-gray-50">
+                  <tr key={index} className="hover:bg-muted">
                     {columns.map((column) => (
                       <td
                         key={column}
                         className={`px-3 py-1.5 whitespace-nowrap ${
                           column === selectedColumn
-                            ? 'font-medium text-gray-900 bg-orange-50'
-                            : 'text-gray-500'
+                            ? 'font-medium text-foreground bg-orange-50 dark:bg-orange-950/20'
+                            : 'text-muted-foreground'
                         }`}
                       >
                         <div className="truncate max-w-xs" title={row[column] || '-'}>
@@ -118,10 +118,10 @@ export function CSVPreview({ rows, columns, onEmailColumnConfirmed }: CSVPreview
                   </tr>
                 ))}
                 {hasMoreRows && (
-                  <tr className="bg-gray-50">
+                  <tr className="bg-muted">
                     <td
                       colSpan={columns.length}
-                      className="px-3 py-2 text-center text-gray-400 italic"
+                      className="px-3 py-2 text-center text-muted-foreground italic"
                     >
                       ... and {rows.length - 5} more rows
                     </td>
