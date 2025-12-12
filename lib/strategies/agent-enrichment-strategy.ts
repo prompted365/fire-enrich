@@ -22,7 +22,9 @@ export class AgentEnrichmentStrategy {
     fields: EnrichmentField[],
     emailColumn: string,
     onProgress?: (field: string, value: unknown) => void,
-    onAgentProgress?: (message: string, type: 'info' | 'success' | 'warning' | 'agent') => void
+    onAgentProgress?: (message: string, type: 'info' | 'success' | 'warning' | 'agent') => void,
+    rowIndex = 0,
+    allRows: CSVRow[] = [row]
   ): Promise<RowEnrichmentResult> {
     const email = row[emailColumn];
     console.log(`[AgentEnrichmentStrategy] Starting enrichment for email: ${email}`);
@@ -31,7 +33,7 @@ export class AgentEnrichmentStrategy {
     if (!email) {
       console.log(`[AgentEnrichmentStrategy] No email found in column: ${emailColumn}`);
       return {
-        rowIndex: 0,
+        rowIndex,
         originalData: row,
         enrichments: {},
         status: 'error',
@@ -45,7 +47,7 @@ export class AgentEnrichmentStrategy {
       const skipReason = getSkipReason(email, skipList);
       console.log(`[AgentEnrichmentStrategy] Skipping email ${email}: ${skipReason}`);
       return {
-        rowIndex: 0,
+        rowIndex,
         originalData: row,
         enrichments: {},
         status: 'skipped',
@@ -61,7 +63,9 @@ export class AgentEnrichmentStrategy {
         fields,
         emailColumn,
         onProgress,
-        onAgentProgress
+        onAgentProgress,
+        rowIndex,
+        allRows
       );
       
       // Filter out null values to match the expected type
@@ -82,7 +86,7 @@ export class AgentEnrichmentStrategy {
     } catch (error) {
       console.error('[AgentEnrichmentStrategy] Enrichment error:', error);
       return {
-        rowIndex: 0,
+        rowIndex,
         originalData: row,
         enrichments: {},
         status: 'error',

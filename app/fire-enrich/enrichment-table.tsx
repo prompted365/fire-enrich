@@ -745,8 +745,23 @@ export function EnrichmentTable({ rows, fields, emailColumn }: EnrichmentTablePr
                             <span className="inline-flex items-center px-2 py-1 bg-red-100 text-red-600 rounded-full text-xs font-medium">
                               Error
                             </span>
-                          ) : !enrichment || enrichment.value === null || enrichment.value === undefined || enrichment.value === '' ? (
-                          <div 
+                          ) : enrichment?.pendingDependencies?.length && (!enrichment.value || enrichment.value === '') ? (
+                          <div
+                            className={shouldAnimate && !isCellShown ? "animate-in fade-in slide-in-from-bottom-2" : ""}
+                            style={shouldAnimate && !isCellShown ? {
+                              animationDuration: '500ms',
+                              animationDelay: `${cellDelay}ms`,
+                              animationFillMode: 'both',
+                              animationTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)'
+                            } : {}}
+                          >
+                            <span className="flex items-center gap-2 text-orange-600 dark:text-orange-400">
+                              <Activity size={16} />
+                              <span className="text-xs font-medium">Awaiting prereq {enrichment.pendingDependencies.join(', ')}</span>
+                            </span>
+                          </div>
+                        ) : !enrichment || enrichment.value === null || enrichment.value === undefined || enrichment.value === '' ? (
+                          <div
                             className={shouldAnimate && !isCellShown ? "animate-in fade-in slide-in-from-bottom-2" : ""}
                             style={shouldAnimate && !isCellShown ? {
                               animationDuration: '500ms',
@@ -761,7 +776,7 @@ export function EnrichmentTable({ rows, fields, emailColumn }: EnrichmentTablePr
                             </span>
                           </div>
                         ) : (
-                          <div 
+                          <div
                             className={shouldAnimate && !isCellShown ? "animate-in fade-in slide-in-from-bottom-2" : ""}
                             style={shouldAnimate && !isCellShown ? {
                               animationDuration: '500ms',

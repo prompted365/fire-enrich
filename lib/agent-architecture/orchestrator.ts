@@ -5,6 +5,7 @@ import { FirecrawlService } from '../services/firecrawl';
 import { OpenAIService } from '../services/openai';
 import type { ContextConfig } from '../config/context-config';
 import type { EnrichmentMetrics } from '../services/feedback';
+import { buildCellPromptPlan, type CellPromptPlan } from '../utils/cell-prompts';
 
 export class AgentOrchestrator {
   private firecrawl: FirecrawlService;
@@ -49,7 +50,9 @@ export class AgentOrchestrator {
     fields: EnrichmentField[],
     emailColumn: string,
     onProgress?: (field: string, value: unknown) => void,
-    onAgentProgress?: (message: string, type: 'info' | 'success' | 'warning' | 'agent') => void
+    onAgentProgress?: (message: string, type: 'info' | 'success' | 'warning' | 'agent') => void,
+    rowIndex = 0,
+    allRows: Record<string, string>[] = [row]
   ): Promise<RowEnrichmentResult> {
     const email = row[emailColumn];
     console.log(`[Orchestrator] Starting enrichment for email: ${email}`);
@@ -59,11 +62,14 @@ export class AgentOrchestrator {
       emailContext: EmailContext;
       discoveredData: Record<string, unknown>;
       companyName?: string;
+      rowIndex: number;
+      originalRow: Record<string, string>;
+      allRows: Record<string, string>[];
     }
     
     if (!email) {
       return {
-        rowIndex: 0,
+        rowIndex,
         originalData: row,
         enrichments: {},
         status: 'error',
@@ -101,7 +107,99 @@ export class AgentOrchestrator {
       
       // Step 3: Progressive enrichment
       const enrichments: Record<string, unknown> = {};
-      const context: OrchestrationContext = { email, emailContext, discoveredData: {} };
+      const context: OrchestrationContext = { email, emailContext, discoveredData: {}, rowIndex, originalRow: row, allRows };
+
+      const prepareFieldPlans = (targetFields: EnrichmentField[], existing: Record<string, unknown>) => {
+        const plans = targetFields.map(field => buildCellPromptPlan({
+          field,
+          row,
+          rowIndex,
+          allRows,
+          existingEnrichments: existing,
+          contextConfig: this.contextConfig
+        }));
+
+        const readyPlans: CellPromptPlan[] = [];
+        const blockedPlans: CellPromptPlan[] = [];
+
+        for (const plan of plans) {
+          const dependencies = plan.field.dependencies || [];
+          const requireAll = plan.field.requireAllDependencies !== false;
+          const missing = plan.missingDependencies.length;
+          const isReady = dependencies.length === 0
+            ? true
+            : requireAll
+              ? missing === 0
+              : missing < dependencies.length;
+
+          if (isReady) {
+            readyPlans.push(plan);
+          } else {
+            blockedPlans.push(plan);
+          }
+        }
+
+        return {
+          readyFields: readyPlans.map(p => p.field),
+          readyPlans,
+          blockedPlans
+        };
+      };
+
+      const createPendingResults = (plans: CellPromptPlan[]) => {
+        const pending: Record<string, unknown> = {};
+        plans.forEach(plan => {
+          pending[plan.field.name] = {
+            field: plan.field.name,
+            value: null,
+            confidence: 0,
+            pendingDependencies: plan.missingDependencies,
+            status: 'awaiting_dependencies'
+          };
+        });
+        return pending;
+      };
+
+      const runPhaseWithDependencies = async (
+        targetFields: EnrichmentField[],
+        runner: (activeFields: EnrichmentField[], plans: CellPromptPlan[]) => Promise<Record<string, unknown>>
+      ) => {
+        const phaseResults: Record<string, unknown> = {};
+        const pendingPlans = new Map<string, CellPromptPlan>();
+        let remaining = [...targetFields];
+
+        while (remaining.length > 0) {
+          const { readyFields, readyPlans, blockedPlans } = prepareFieldPlans(remaining, enrichments);
+          blockedPlans.forEach(plan => pendingPlans.set(plan.field.name, plan));
+
+          if (readyFields.length === 0) break;
+
+          const readyNames = new Set(readyFields.map(f => f.name));
+          const activeResults = await runner(readyFields, readyPlans);
+          Object.assign(phaseResults, activeResults);
+          Object.assign(enrichments, activeResults);
+
+          remaining = remaining.filter(f => !readyNames.has(f.name));
+        }
+
+        if (remaining.length > 0) {
+          const pending = remaining.map(field =>
+            pendingPlans.get(field.name) || buildCellPromptPlan({
+              field,
+              row,
+              rowIndex,
+              allRows,
+              existingEnrichments: enrichments,
+              contextConfig: this.contextConfig
+            })
+          );
+          const pendingResults = createPendingResults(pending);
+          Object.assign(phaseResults, pendingResults);
+          Object.assign(enrichments, pendingResults);
+        }
+
+        return phaseResults;
+      };
       
       for (const phase of this.agentOrder) {
         if (phase === 'discovery' && fieldCategories.discovery.length > 0) {
@@ -110,29 +208,35 @@ export class AgentOrchestrator {
             onAgentProgress(`Discovery Agent: Identifying company from ${emailContext.domain}`, 'agent');
             onAgentProgress(`Target fields: ${fieldCategories.discovery.map(f => f.name).join(', ')}`, 'info');
           }
-          const discoveryResults = await this.runDiscoveryPhase(
-            context,
+          const discoveryResults = await runPhaseWithDependencies(
             fieldCategories.discovery,
-            onAgentProgress
+            (activeFields, plans) => this.runDiscoveryPhase(
+              context,
+              activeFields,
+              onAgentProgress,
+              plans
+            )
           );
-          console.log(`[Orchestrator] DISCOVERY-AGENT completed, found ${Object.keys(discoveryResults).length} values`);
-          if (onAgentProgress && Object.keys(discoveryResults).length > 0) {
-            onAgentProgress(`Discovery complete: Found ${Object.keys(discoveryResults).length} fields`, 'success');
+          const resolvedDiscovery = Object.fromEntries(
+            Object.entries(discoveryResults).filter(([, value]) => (value as { value?: unknown })?.value)
+          );
+          console.log(`[Orchestrator] DISCOVERY-AGENT completed, found ${Object.keys(resolvedDiscovery).length} values`);
+          if (onAgentProgress && Object.keys(resolvedDiscovery).length > 0) {
+            onAgentProgress(`Discovery complete: Found ${Object.keys(resolvedDiscovery).length} fields`, 'success');
           }
-          Object.assign(enrichments, discoveryResults);
-          Object.assign(context.discoveredData, discoveryResults);
+          Object.assign(context.discoveredData, resolvedDiscovery);
 
-          const companyNameField = Object.keys(discoveryResults).find(key =>
+          const companyNameField = Object.keys(resolvedDiscovery).find(key =>
             key.toLowerCase().includes('company') && key.toLowerCase().includes('name')
           );
-          if (companyNameField && discoveryResults[companyNameField]) {
-            const companyNameResult = discoveryResults[companyNameField] as { value?: unknown } | unknown;
+          if (companyNameField && resolvedDiscovery[companyNameField]) {
+            const companyNameResult = resolvedDiscovery[companyNameField] as { value?: unknown } | unknown;
             const companyNameValue = (companyNameResult && typeof companyNameResult === 'object' && 'value' in companyNameResult) ? companyNameResult.value : companyNameResult;
             (context as OrchestrationContext).companyName = companyNameValue as string;
             console.log(`[Orchestrator] Updated context with company name: ${(context as OrchestrationContext).companyName}`);
           }
 
-          for (const [field, value] of Object.entries(discoveryResults)) {
+          for (const [field, value] of Object.entries(resolvedDiscovery)) {
             if (value && onProgress) {
               onProgress(field, value);
             }
@@ -143,18 +247,24 @@ export class AgentOrchestrator {
             onAgentProgress(`Profile Agent: Gathering company details`, 'agent');
             onAgentProgress(`Target fields: ${fieldCategories.profile.map(f => f.name).join(', ')}`, 'info');
           }
-          const profileResults = await this.runProfilePhase(
-            context,
+          const profileResults = await runPhaseWithDependencies(
             fieldCategories.profile,
-            onAgentProgress
+            (activeFields, plans) => this.runProfilePhase(
+              context,
+              activeFields,
+              onAgentProgress,
+              plans
+            )
           );
-          console.log(`[Orchestrator] COMPANY-PROFILE-AGENT completed, found ${Object.keys(profileResults).length} values`);
-          if (onAgentProgress && Object.keys(profileResults).length > 0) {
-            onAgentProgress(`Profile complete: Found ${Object.keys(profileResults).length} fields`, 'success');
+          const resolvedProfile = Object.fromEntries(
+            Object.entries(profileResults).filter(([, value]) => (value as { value?: unknown })?.value)
+          );
+          console.log(`[Orchestrator] COMPANY-PROFILE-AGENT completed, found ${Object.keys(resolvedProfile).length} values`);
+          if (onAgentProgress && Object.keys(resolvedProfile).length > 0) {
+            onAgentProgress(`Profile complete: Found ${Object.keys(resolvedProfile).length} fields`, 'success');
           }
-          Object.assign(enrichments, profileResults);
 
-          for (const [field, value] of Object.entries(profileResults)) {
+          for (const [field, value] of Object.entries(resolvedProfile)) {
             if (value && onProgress) {
               onProgress(field, value);
             }
@@ -165,18 +275,24 @@ export class AgentOrchestrator {
             onAgentProgress(`Metrics Agent: Analyzing company metrics`, 'agent');
             onAgentProgress(`Target fields: ${fieldCategories.metrics.map(f => f.name).join(', ')}`, 'info');
           }
-          const metricsResults = await this.runMetricsPhase(
-            context,
+          const metricsResults = await runPhaseWithDependencies(
             fieldCategories.metrics,
-            onAgentProgress
+            (activeFields, plans) => this.runMetricsPhase(
+              context,
+              activeFields,
+              onAgentProgress,
+              plans
+            )
           );
-          console.log(`[Orchestrator] METRICS-AGENT completed, found ${Object.keys(metricsResults).length} values`);
-          if (onAgentProgress && Object.keys(metricsResults).length > 0) {
-            onAgentProgress(`Metrics complete: Found ${Object.keys(metricsResults).length} fields`, 'success');
+          const resolvedMetrics = Object.fromEntries(
+            Object.entries(metricsResults).filter(([, value]) => (value as { value?: unknown })?.value)
+          );
+          console.log(`[Orchestrator] METRICS-AGENT completed, found ${Object.keys(resolvedMetrics).length} values`);
+          if (onAgentProgress && Object.keys(resolvedMetrics).length > 0) {
+            onAgentProgress(`Metrics complete: Found ${Object.keys(resolvedMetrics).length} fields`, 'success');
           }
-          Object.assign(enrichments, metricsResults);
 
-          for (const [field, value] of Object.entries(metricsResults)) {
+          for (const [field, value] of Object.entries(resolvedMetrics)) {
             if (value && onProgress) {
               onProgress(field, value);
             }
@@ -187,18 +303,24 @@ export class AgentOrchestrator {
             onAgentProgress(`Funding Agent: Researching investment data`, 'agent');
             onAgentProgress(`Target fields: ${fieldCategories.funding.map(f => f.name).join(', ')}`, 'info');
           }
-          const fundingResults = await this.runFundingPhase(
-            context,
+          const fundingResults = await runPhaseWithDependencies(
             fieldCategories.funding,
-            onAgentProgress
+            (activeFields, plans) => this.runFundingPhase(
+              context,
+              activeFields,
+              onAgentProgress,
+              plans
+            )
           );
-          console.log(`[Orchestrator] FUNDING-AGENT completed, found ${Object.keys(fundingResults).length} values`);
-          if (onAgentProgress && Object.keys(fundingResults).length > 0) {
-            onAgentProgress(`Funding complete: Found ${Object.keys(fundingResults).length} fields`, 'success');
+          const resolvedFunding = Object.fromEntries(
+            Object.entries(fundingResults).filter(([, value]) => (value as { value?: unknown })?.value)
+          );
+          console.log(`[Orchestrator] FUNDING-AGENT completed, found ${Object.keys(resolvedFunding).length} values`);
+          if (onAgentProgress && Object.keys(resolvedFunding).length > 0) {
+            onAgentProgress(`Funding complete: Found ${Object.keys(resolvedFunding).length} fields`, 'success');
           }
-          Object.assign(enrichments, fundingResults);
 
-          for (const [field, value] of Object.entries(fundingResults)) {
+          for (const [field, value] of Object.entries(resolvedFunding)) {
             if (value && onProgress) {
               onProgress(field, value);
             }
@@ -209,18 +331,24 @@ export class AgentOrchestrator {
             onAgentProgress(`Tech Stack Agent: Detecting technologies`, 'agent');
             onAgentProgress(`Target fields: ${fieldCategories.techStack.map(f => f.name).join(', ')}`, 'info');
           }
-          const techStackResults = await this.runTechStackPhase(
-            context,
+          const techStackResults = await runPhaseWithDependencies(
             fieldCategories.techStack,
-            onAgentProgress
+            (activeFields, plans) => this.runTechStackPhase(
+              context,
+              activeFields,
+              onAgentProgress,
+              plans
+            )
           );
-          console.log(`[Orchestrator] TECH-STACK-AGENT completed, found ${Object.keys(techStackResults).length} values`);
-          if (onAgentProgress && Object.keys(techStackResults).length > 0) {
-            onAgentProgress(`Tech Stack complete: Found ${Object.keys(techStackResults).length} fields`, 'success');
+          const resolvedTech = Object.fromEntries(
+            Object.entries(techStackResults).filter(([, value]) => (value as { value?: unknown })?.value)
+          );
+          console.log(`[Orchestrator] TECH-STACK-AGENT completed, found ${Object.keys(resolvedTech).length} values`);
+          if (onAgentProgress && Object.keys(resolvedTech).length > 0) {
+            onAgentProgress(`Tech Stack complete: Found ${Object.keys(resolvedTech).length} fields`, 'success');
           }
-          Object.assign(enrichments, techStackResults);
 
-          for (const [field, value] of Object.entries(techStackResults)) {
+          for (const [field, value] of Object.entries(resolvedTech)) {
             if (value && onProgress) {
               onProgress(field, value);
             }
@@ -231,18 +359,24 @@ export class AgentOrchestrator {
             onAgentProgress(`General Agent: Extracting custom information`, 'agent');
             onAgentProgress(`Target fields: ${fieldCategories.other.map(f => f.name).join(', ')}`, 'info');
           }
-          const generalResults = await this.runGeneralPhase(
-            context,
+          const generalResults = await runPhaseWithDependencies(
             fieldCategories.other,
-            onAgentProgress
+            (activeFields, plans) => this.runGeneralPhase(
+              context,
+              activeFields,
+              onAgentProgress,
+              plans
+            )
           );
-          console.log(`[ORCHESTRATOR] GENERAL-AGENT completed, found ${Object.keys(generalResults).length} values`);
-          if (onAgentProgress && Object.keys(generalResults).length > 0) {
-            onAgentProgress(`General complete: Found ${Object.keys(generalResults).length} fields`, 'success');
+          const resolvedGeneral = Object.fromEntries(
+            Object.entries(generalResults).filter(([, value]) => (value as { value?: unknown })?.value)
+          );
+          console.log(`[ORCHESTRATOR] GENERAL-AGENT completed, found ${Object.keys(resolvedGeneral).length} values`);
+          if (onAgentProgress && Object.keys(resolvedGeneral).length > 0) {
+            onAgentProgress(`General complete: Found ${Object.keys(resolvedGeneral).length} fields`, 'success');
           }
-          Object.assign(enrichments, generalResults);
 
-          for (const [field, value] of Object.entries(generalResults)) {
+          for (const [field, value] of Object.entries(resolvedGeneral)) {
             if (value && onProgress) {
               onProgress(field, value);
             }
@@ -269,7 +403,7 @@ export class AgentOrchestrator {
       console.log(`[Orchestrator] ================================`);
       
       return {
-        rowIndex: 0,
+        rowIndex,
         originalData: row,
         enrichments: enrichmentResults,
         status: 'completed',
@@ -277,7 +411,7 @@ export class AgentOrchestrator {
     } catch (error) {
       console.error('Orchestrator error:', error);
       return {
-        rowIndex: 0,
+        rowIndex,
         originalData: row,
         enrichments: {},
         status: 'error',
@@ -360,7 +494,8 @@ export class AgentOrchestrator {
   private async runDiscoveryPhase(
     context: Record<string, unknown>,
     fields: EnrichmentField[],
-    onAgentProgress?: (message: string, type: 'info' | 'success' | 'warning' | 'agent') => void
+    onAgentProgress?: (message: string, type: 'info' | 'success' | 'warning' | 'agent') => void,
+    cellPlans?: CellPromptPlan[]
   ): Promise<Record<string, unknown>> {
     console.log('[AGENT-DISCOVERY] Starting Discovery Phase');
     const ctxEmail = context['email'] as string;
@@ -584,7 +719,8 @@ export class AgentOrchestrator {
             validResults,
             missingFields,
             context,
-            onAgentProgress
+            onAgentProgress,
+            cellPlans
           );
           
           Object.assign(results, extractedData);
@@ -617,7 +753,8 @@ export class AgentOrchestrator {
   private async runProfilePhase(
     context: Record<string, unknown>,
     fields: EnrichmentField[],
-    onAgentProgress?: (message: string, type: 'info' | 'success' | 'warning' | 'agent') => void
+    onAgentProgress?: (message: string, type: 'info' | 'success' | 'warning' | 'agent') => void,
+    cellPlans?: CellPromptPlan[]
   ): Promise<Record<string, unknown>> {
     console.log('[AGENT-PROFILE] Starting Profile Phase');
     // Look for company name in discovered data or context
@@ -685,12 +822,14 @@ export class AgentOrchestrator {
       ? await this.openai.extractStructuredDataWithCorroboration(
           combinedContent,
           fields,
-          enrichmentContext
+          enrichmentContext,
+          cellPlans
         )
       : await this.openai.extractStructuredDataOriginal(
           combinedContent,
           fields,
-          enrichmentContext
+          enrichmentContext,
+          cellPlans
         );
     
     // Add source URLs to each result (only if not already present from corroboration)
@@ -778,7 +917,8 @@ export class AgentOrchestrator {
   private async runMetricsPhase(
     context: Record<string, unknown>,
     fields: EnrichmentField[],
-    onAgentProgress?: (message: string, type: 'info' | 'success' | 'warning' | 'agent') => void
+    onAgentProgress?: (message: string, type: 'info' | 'success' | 'warning' | 'agent') => void,
+    cellPlans?: CellPromptPlan[]
   ): Promise<Record<string, unknown>> {
     console.log('[AGENT-METRICS] Starting Metrics Phase');
     // Look for company name in discovered data or context
@@ -841,12 +981,14 @@ export class AgentOrchestrator {
       ? await this.openai.extractStructuredDataWithCorroboration(
           combinedContent,
           fields,
-          enrichmentContext
+          enrichmentContext,
+          cellPlans
         )
       : await this.openai.extractStructuredDataOriginal(
           combinedContent,
           fields,
-          enrichmentContext
+          enrichmentContext,
+          cellPlans
         );
     
     // Add source URLs to each result (only if not already present from corroboration)
@@ -934,7 +1076,8 @@ export class AgentOrchestrator {
   private async runFundingPhase(
     context: Record<string, unknown>,
     fields: EnrichmentField[],
-    onAgentProgress?: (message: string, type: 'info' | 'success' | 'warning' | 'agent') => void
+    onAgentProgress?: (message: string, type: 'info' | 'success' | 'warning' | 'agent') => void,
+    cellPlans?: CellPromptPlan[]
   ): Promise<Record<string, unknown>> {
     console.log('[AGENT-FUNDING] Starting Funding Phase');
     // Look for company name in discovered data or context
@@ -995,12 +1138,14 @@ export class AgentOrchestrator {
       ? await this.openai.extractStructuredDataWithCorroboration(
           combinedContent,
           fields,
-          enrichmentContext
+          enrichmentContext,
+          cellPlans
         )
       : await this.openai.extractStructuredDataOriginal(
           combinedContent,
           fields,
-          enrichmentContext
+          enrichmentContext,
+          cellPlans
         );
     
     // Add source URLs to each result (only if not already present from corroboration)
@@ -1088,7 +1233,8 @@ export class AgentOrchestrator {
   private async runTechStackPhase(
     context: Record<string, unknown>,
     fields: EnrichmentField[],
-    onAgentProgress?: (message: string, type: 'info' | 'success' | 'warning' | 'agent') => void
+    onAgentProgress?: (message: string, type: 'info' | 'success' | 'warning' | 'agent') => void,
+    cellPlans?: CellPromptPlan[]
   ): Promise<Record<string, unknown>> {
     console.log('[AGENT-TECH-STACK] Starting Tech Stack Phase');
     // Look for company name in discovered data or context
@@ -1253,12 +1399,14 @@ export class AgentOrchestrator {
       ? await this.openai.extractStructuredDataWithCorroboration(
           combinedContent,
           fields,
-          enrichmentContext
+          enrichmentContext,
+          cellPlans
         )
       : await this.openai.extractStructuredDataOriginal(
           combinedContent,
           fields,
-          enrichmentContext
+          enrichmentContext,
+          cellPlans
         );
     
     
@@ -1320,7 +1468,8 @@ export class AgentOrchestrator {
   private async runGeneralPhase(
     context: Record<string, unknown>,
     fields: EnrichmentField[],
-    onAgentProgress?: (message: string, type: 'info' | 'success' | 'warning' | 'agent') => void
+    onAgentProgress?: (message: string, type: 'info' | 'success' | 'warning' | 'agent') => void,
+    cellPlans?: CellPromptPlan[]
   ): Promise<Record<string, unknown>> {
     console.log('[AGENT-GENERAL] Starting General Information Phase');
     // Look for company name in discovered data or context
@@ -1459,12 +1608,14 @@ export class AgentOrchestrator {
       ? await this.openai.extractStructuredDataWithCorroboration(
           combinedContent,
           fields,
-          enrichmentContext
+          enrichmentContext,
+          cellPlans
         )
       : await this.openai.extractStructuredDataOriginal(
           combinedContent,
           fields,
-          enrichmentContext
+          enrichmentContext,
+          cellPlans
         );
     
     const foundFields = Object.keys(enrichmentResults).filter(k => enrichmentResults[k]?.value);
@@ -1991,7 +2142,8 @@ export class AgentOrchestrator {
     searchResults: Array<{ url: string; title?: string; markdown?: string }>,
     fields: EnrichmentField[],
     context: Record<string, unknown>,
-    onAgentProgress?: (message: string, type: 'info' | 'success' | 'warning' | 'agent') => void
+    onAgentProgress?: (message: string, type: 'info' | 'success' | 'warning' | 'agent') => void,
+    cellPlans?: CellPromptPlan[]
   ): Promise<Record<string, unknown>> {
     console.log('[AGENT-DISCOVERY] Extracting from search results...');
     
@@ -2041,7 +2193,8 @@ IMPORTANT: Only extract information that is clearly about the company associated
       const enrichmentResults = await this.openai.extractStructuredDataOriginal(
         fullContent,
         fields,
-        stringContext
+        stringContext,
+        cellPlans
       );
       
       const foundFields = Object.keys(enrichmentResults).filter(k => enrichmentResults[k]?.value);

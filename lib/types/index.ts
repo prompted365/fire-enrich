@@ -8,6 +8,14 @@ export interface EnrichmentField {
   description: string;
   type: 'string' | 'number' | 'boolean' | 'array';
   required: boolean;
+  /** Optional field-specific system prompt override */
+  promptTemplate?: string;
+  /** Other fields that must be populated before this field can be enriched */
+  dependencies?: string[];
+  /** How many sibling rows to surface as pattern examples */
+  adjacentWindow?: number;
+  /** When true, all listed dependencies must be present before triggering enrichment */
+  requireAllDependencies?: boolean;
 }
 
 export interface EnrichmentRequest {
@@ -58,6 +66,10 @@ export interface EnrichmentResult {
     }>;
     sources_agree: boolean;
   };
+  /** Dependencies that blocked enrichment for this field */
+  pendingDependencies?: string[];
+  /** Optional status flag to help the UI render dependency waits */
+  status?: 'awaiting_dependencies' | 'extracted' | 'skipped' | 'error';
 }
 
 export interface RowEnrichmentResult {

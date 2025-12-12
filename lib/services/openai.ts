@@ -4,6 +4,7 @@ import { zodResponseFormat } from 'openai/helpers/zod';
 import type { EnrichmentField, EnrichmentResult, MessageParams } from '../types';
 import { MESSAGE_TEMPLATES } from '../templates/message-templates';
 import type { ContextConfig } from '../config/context-config';
+import type { CellPromptPlan } from '@/lib/utils/cell-prompts';
 
 export class OpenAIService {
   private client: OpenAI;
@@ -110,7 +111,8 @@ export class OpenAIService {
   async extractStructuredDataOriginal(
     content: string,
     fields: EnrichmentField[],
-    context: Record<string, string>
+    context: Record<string, string>,
+    cellPlans?: CellPromptPlan[]
   ): Promise<Record<string, EnrichmentResult>> {
     try {
       const schema = this.createEnrichmentSchema(fields);
@@ -131,6 +133,12 @@ export class OpenAIService {
         })
         .filter(line => !line.includes('undefined'))
         .join('\n');
+
+      const cellPromptSection = cellPlans && cellPlans.length > 0
+        ? `\n\nCell-level directives and row context:\n${cellPlans
+            .map(plan => `- ${plan.field.name} (Row ${plan.rowIndex + 1}): ${plan.systemDirective}`)
+            .join('\n\n')}`
+        : '';
 
       // Trim content to prevent token overflow
       const MAX_CONTENT_CHARS = 400000; // Conservative limit for 128k token model
@@ -336,7 +344,8 @@ DOMAIN PARKING/SALE PAGES:
   async extractStructuredDataWithCorroboration(
     content: string,
     fields: EnrichmentField[],
-    context: Record<string, string>
+    context: Record<string, string>,
+    cellPlans?: CellPromptPlan[]
   ): Promise<Record<string, EnrichmentResult>> {
     try {
       console.log('Starting corroborated extraction for fields:', fields.map(f => f.name));
@@ -438,7 +447,7 @@ Context about the entity:
 ${contextInfo}
 
 Fields to extract:
-${fieldDescriptions}
+${fieldDescriptions}${cellPromptSection}
 
 Example of what the content looks like:
 """
@@ -742,7 +751,7 @@ REMEMBER: Extract exact_text from the "=== ACTUAL CONTENT BELOW ===" section, NO
     } catch (error) {
       console.error('OpenAI corroborated extraction error:', error);
       // Fallback to original extraction method
-      return this.extractStructuredDataOriginal(content, fields, context);
+      return this.extractStructuredDataOriginal(content, fields, context, cellPlans);
     }
   }
 

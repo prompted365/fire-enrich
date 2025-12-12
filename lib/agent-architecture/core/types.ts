@@ -19,6 +19,10 @@ export const EnrichmentFieldSchema = z.object({
   description: z.string(),
   type: z.enum(['string', 'number', 'boolean', 'array']),
   required: z.boolean().default(false),
+  promptTemplate: z.string().optional(),
+  dependencies: z.array(z.string()).optional(),
+  adjacentWindow: z.number().optional(),
+  requireAllDependencies: z.boolean().optional(),
 });
 
 export type EnrichmentField = z.infer<typeof EnrichmentFieldSchema>;
@@ -55,6 +59,8 @@ export interface EnrichmentResult {
     url: string;
     snippet: string;
   }>;
+  pendingDependencies?: string[];
+  status?: 'awaiting_dependencies' | 'extracted' | 'skipped' | 'error';
 }
 
 export interface RowEnrichmentResult {
