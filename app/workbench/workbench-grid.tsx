@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Download, Play, Pause, RefreshCw, Save, Plus, Trash2 } from "lucide-react";
+import { Loader2, Download, Play, Pause, RefreshCw, Save, Plus, Trash2, Brain, BarChart3 } from "lucide-react";
 import { toast } from "sonner";
 import {
   DropdownMenu,
@@ -16,6 +16,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { EnrichmentOrchestrator, EnrichmentRule } from "./enrichment-orchestrator";
+import { AnalysisPanel } from "./analysis-panel";
+import { StatisticsSidebar } from "./statistics-sidebar";
 
 interface WorkbenchGridProps {
   sessionId: string;
@@ -45,6 +47,8 @@ export function WorkbenchGrid({ sessionId }: WorkbenchGridProps) {
     completed: number;
     currentRow?: number;
   }>({ total: 0, completed: 0 });
+  const [showAnalysisPanel, setShowAnalysisPanel] = useState(false);
+  const [selectedColumn, setSelectedColumn] = useState<string | null>(null);
 
   useEffect(() => {
     loadSessionData();
@@ -357,6 +361,15 @@ export function WorkbenchGrid({ sessionId }: WorkbenchGridProps) {
             )}
           </div>
           <div className="flex items-center gap-2">
+            <Button 
+              onClick={() => setShowAnalysisPanel(true)} 
+              size="sm" 
+              variant="outline" 
+              className="gap-2 border-orange-200 dark:border-orange-800 hover:bg-orange-50 dark:hover:bg-orange-950/20"
+            >
+              <Brain className="h-4 w-4 text-orange-500" />
+              Analyze Slate
+            </Button>
             {hasChanges && (
               <Button onClick={handleSave} size="sm" variant="outline" className="gap-2">
                 <Save className="h-4 w-4" />
@@ -397,37 +410,49 @@ export function WorkbenchGrid({ sessionId }: WorkbenchGridProps) {
         </div>
       </Card>
 
-      {/* Spreadsheet Grid */}
-      <Card className="overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
-            <thead className="bg-zinc-50 dark:bg-zinc-900 sticky top-0 z-10">
-              <tr>
-                <th className="border border-zinc-200 dark:border-zinc-800 p-2 text-left text-xs font-semibold w-12">
-                  #
-                </th>
-                {columns.map((col) => (
-                  <th
-                    key={col}
-                    className={cn(
-                      "border border-zinc-200 dark:border-zinc-800 p-2 text-left text-xs font-semibold min-w-[150px]",
-                      enrichmentFields.includes(col.replace('enrichment_', '')) && "bg-orange-50 dark:bg-orange-950/20"
-                    )}
-                  >
-                    <div className="flex items-center gap-2">
-                      {col}
-                      {enrichmentFields.includes(col.replace('enrichment_', '')) && (
-                        <Badge variant="secondary" className="text-xs">AI</Badge>
-                      )}
-                    </div>
-                  </th>
-                ))}
-                <th className="border border-zinc-200 dark:border-zinc-800 p-2 text-left text-xs font-semibold w-12">
-                  
-                </th>
-              </tr>
-            </thead>
-            <tbody>
+      {/* Main Content Area */}
+      <div className="flex gap-4">
+        {/* Spreadsheet Grid */}
+        <div className={cn("flex-1 transition-all", selectedColumn && "pr-4")}>
+          <Card className="overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse">
+                <thead className="bg-zinc-50 dark:bg-zinc-900 sticky top-0 z-10">
+                  <tr>
+                    <th className="border border-zinc-200 dark:border-zinc-800 p-2 text-left text-xs font-semibold w-12">
+                      #
+                    </th>
+                    {columns.map((col) => (
+                      <th
+                        key={col}
+                        className={cn(
+                          "border border-zinc-200 dark:border-zinc-800 p-2 text-left text-xs font-semibold min-w-[150px]",
+                          enrichmentFields.includes(col.replace('enrichment_', '')) && "bg-orange-50 dark:bg-orange-950/20",
+                          selectedColumn === col && "bg-orange-100 dark:bg-orange-900/30"
+                        )}
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="flex-1">{col}</span>
+                          {enrichmentFields.includes(col.replace('enrichment_', '')) && (
+                            <Badge variant="secondary" className="text-xs">AI</Badge>
+                          )}
+                          <Button
+                            onClick={() => setSelectedColumn(col)}
+                            size="sm"
+                            variant="ghost"
+                            className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 hover:bg-orange-100 dark:hover:bg-orange-900"
+                          >
+                            <BarChart3 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </th>
+                    ))}
+                    <th className="border border-zinc-200 dark:border-zinc-800 p-2 text-left text-xs font-semibold w-12">
+                      
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
               {data.map((row, rowIndex) => (
                 <tr key={rowIndex} className="hover:bg-zinc-50 dark:hover:bg-zinc-900/50">
                   <td className="border border-zinc-200 dark:border-zinc-800 p-2 text-xs text-muted-foreground text-center">
@@ -494,5 +519,24 @@ export function WorkbenchGrid({ sessionId }: WorkbenchGridProps) {
         </div>
       </Card>
     </div>
+
+    {/* Statistics Sidebar */}
+    {selectedColumn && (
+      <StatisticsSidebar
+        data={data}
+        column={selectedColumn}
+        onClose={() => setSelectedColumn(null)}
+      />
+    )}
+  </div>
+
+  {/* Analysis Panel Dialog */}
+  <AnalysisPanel
+    data={data}
+    columns={columns}
+    open={showAnalysisPanel}
+    onOpenChange={setShowAnalysisPanel}
+  />
+</div>
   );
 }
