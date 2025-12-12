@@ -14,10 +14,10 @@ export async function POST(request: NextRequest) {
       // Create a new enrichment session for the slate
       const sessionResult = await client.query(
         `INSERT INTO enrichment_sessions 
-         (row_count, field_count, status, session_data, created_at, updated_at)
-         VALUES ($1, $2, $3, $4, NOW(), NOW())
+         (row_count, field_count, status, created_at, updated_at)
+         VALUES ($1, $2, $3, NOW(), NOW())
          RETURNING id`,
-        [rows.length || 0, columns.length, 'pending', JSON.stringify({ name, is_slate: true })]
+        [rows.length || 0, columns.length, 'pending']
       );
 
       const sessionId = sessionResult.rows[0].id;

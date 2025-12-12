@@ -58,19 +58,13 @@ export async function POST(request: NextRequest) {
       // Create new session for merged slate
       const sessionResult = await client.query(
         `INSERT INTO enrichment_sessions 
-         (row_count, field_count, status, session_data, created_at, updated_at)
-         VALUES ($1, $2, $3, $4, NOW(), NOW())
+         (row_count, field_count, status, created_at, updated_at)
+         VALUES ($1, $2, $3, NOW(), NOW())
          RETURNING id`,
         [
           mergedData.length,
           allColumns.length,
-          'completed',
-          JSON.stringify({ 
-            name: newSlateName, 
-            is_slate: true, 
-            merged_from: [slate1Id, slate2Id],
-            merge_strategy: mergeStrategy
-          })
+          'completed'
         ]
       );
 
