@@ -16,6 +16,8 @@ import { X, Plus, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
 import { toast } from "sonner";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AgentToggle } from "./agent-toggle";
+import { SettingsPanel, EnrichmentSettings } from "./settings-panel";
 
 interface UnifiedEnrichmentViewProps {
   rows: CSVRow[];
@@ -60,6 +62,43 @@ export function UnifiedEnrichmentView({ rows, columns, onStartEnrichment }: Unif
     name: '',
     description: '',
     type: 'string'
+  });
+  const [useAgents, setUseAgents] = useState(true);
+  const [settings, setSettings] = useState<EnrichmentSettings>(() => {
+    // Load settings from localStorage if available
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('enrichment_settings');
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch (e) {
+          console.error('Failed to parse saved settings:', e);
+        }
+      }
+    }
+    return {
+      useSpecializedAgents: true,
+      enabledAgents: {
+        company: true,
+        funding: true,
+        people: true,
+        product: true,
+        techStack: true,
+        metrics: true,
+        contact: true,
+      },
+      globalInstructions: 'Extract lead enrichment details using email as the primary identifier.',
+      rowContextMappings: {
+        email: 'Email',
+        name: 'Person Name',
+      },
+      columnInstructions: {},
+      useDetailedPrompts: false,
+      enableMetricsFeedback: true,
+      enableMcpServer: false,
+      maxConcurrentRequests: 3,
+      confidenceThreshold: 0.7,
+    };
   });
 
   // Auto-detect email column but stay on step 1 for confirmation
@@ -613,6 +652,25 @@ export function UnifiedEnrichmentView({ rows, columns, onStartEnrichment }: Unif
                   ))}
                 </div>
               )}
+
+              {/* Agent and Settings Configuration */}
+              <div className="mt-6 space-y-4">
+                <div className="flex items-center justify-between p-4 border border-orange-200 rounded-lg bg-orange-50/50 dark:border-orange-900/30 dark:bg-orange-950/20">
+                  <AgentToggle
+                    checked={useAgents && settings.useSpecializedAgents}
+                    onCheckedChange={(checked) => {
+                      setUseAgents(checked);
+                      setSettings({ ...settings, useSpecializedAgents: checked });
+                    }}
+                    fields={selectedFields}
+                  />
+                  <SettingsPanel
+                    settings={settings}
+                    onSettingsChange={setSettings}
+                    fields={selectedFields}
+                  />
+                </div>
+              </div>
 
               <Button 
                 variant="orange"
