@@ -50,6 +50,36 @@ two engines:
 The API will create the `enrichment_sessions` and `enrichment_results` tables
 automatically when it first runs, so no separate migration step is required.
 
+## Model Context Protocol tooling
+
+MCP support is available for agentic integrations:
+
+- `lib/mcp/server.ts` exposes the orchestrator as an MCP server with tools to enrich rows, preview prompt plans, and describe the current tool surface.
+- `lib/mcp/client.ts` provides a lightweight MCP client wrapper for calling those tools over Streamable HTTP or custom transports.
+- `lib/mcp/relay.ts` lets you run a “client as a server” relay that proxies tool invocations to an upstream MCP endpoint.
+
+Example: start a server transport and connect a client in a standalone script.
+
+```ts
+import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp';
+import { AgentMcpServer, AgentMcpClient, RelayMcpServer } from '@/lib/mcp';
+
+const server = new AgentMcpServer({
+  firecrawlApiKey: process.env.FIRECRAWL_API_KEY || '',
+  openaiApiKey: process.env.OPENAI_API_KEY || '',
+});
+
+// Bind to your preferred HTTP handler
+const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: () => crypto.randomUUID() });
+await server.connect(transport);
+
+// Connect a client and relay it as a downstream MCP server
+const client = new AgentMcpClient();
+await client.connectToHttp('http://localhost:3000/mcp');
+const relay = new RelayMcpServer({ client });
+// Attach relay to another transport if you want to expose the upstream tools locally
+```
+
 ## Example Enrichment
 
 **Before:**
