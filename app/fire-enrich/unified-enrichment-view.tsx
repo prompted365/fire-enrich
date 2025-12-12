@@ -22,7 +22,7 @@ import { SettingsPanel, EnrichmentSettings } from "./settings-panel";
 interface UnifiedEnrichmentViewProps {
   rows: CSVRow[];
   columns: string[];
-  onStartEnrichment: (emailColumn: string, fields: EnrichmentField[]) => void;
+  onStartEnrichment: (primaryKeyColumn: string, fields: EnrichmentField[]) => void;
 }
 
 const PRESET_FIELDS: EnrichmentField[] = [
@@ -39,7 +39,7 @@ const PRESET_FIELDS: EnrichmentField[] = [
 
 export function UnifiedEnrichmentView({ rows, columns, onStartEnrichment }: UnifiedEnrichmentViewProps) {
   const [step, setStep] = useState<1 | 2>(1);
-  const [emailColumn, setEmailColumn] = useState<string>('');
+  const [primaryKeyColumn, setPrimaryKeyColumn] = useState<string>('');
   const [selectedFields, setSelectedFields] = useState<EnrichmentField[]>([
     // Default selected fields (3 fields)
     PRESET_FIELDS.find(f => f.name === 'companyName')!,
@@ -87,10 +87,10 @@ export function UnifiedEnrichmentView({ rows, columns, onStartEnrichment }: Unif
         metrics: true,
         contact: true,
       },
-      globalInstructions: 'Extract lead enrichment details using email as the primary identifier.',
+      globalInstructions: 'Extract enrichment details using the primary key to identify each record.',
       rowContextMappings: {
-        email: 'Email',
-        name: 'Person Name',
+        primary_key: 'Record Identifier',
+        name: 'Name/Company',
       },
       columnInstructions: {},
       useDetailedPrompts: false,
@@ -101,13 +101,20 @@ export function UnifiedEnrichmentView({ rows, columns, onStartEnrichment }: Unif
     };
   });
 
-  // Auto-detect email column but stay on step 1 for confirmation
+  // Auto-detect primary key column (email, name, company, or first column)
   useEffect(() => {
     if (rows && columns && Array.isArray(rows) && Array.isArray(columns)) {
-      const detection = detectEmailColumn(rows, columns);
-      if (detection.columnName && detection.confidence > 50) {
-        setEmailColumn(detection.columnName);
-        // Stay on step 1 to let user confirm or change
+      // Try email detection first
+      const emailDetection = detectEmailColumn(rows, columns);
+      if (emailDetection.columnName && emailDetection.confidence > 50) {
+        setPrimaryKeyColumn(emailDetection.columnName);
+      } else {
+        // Fall back to common primary key column names
+        const commonKeys = ['name', 'company', 'company_name', 'id', 'identifier'];
+        const foundKey = columns.find(col => 
+          commonKeys.some(key => col.toLowerCase().includes(key))
+        );
+        setPrimaryKeyColumn(foundKey || columns[0]);
       }
     }
   }, [rows, columns]);
@@ -209,16 +216,16 @@ export function UnifiedEnrichmentView({ rows, columns, onStartEnrichment }: Unif
               <TableRow className="border-b-2 border-orange-100">
                 {/* All columns - highlight email column */}
                 {columns.map((col, idx) => {
-                  const isEmailCol = col === emailColumn;
+                  const isPrimaryKeyCol = col === primaryKeyColumn;
                   return (
                     <TableHead 
                       key={idx}
                       className={cn(
                         "transition-all duration-700 relative",
-                        isEmailCol
+                        isPrimaryKeyCol
                           ? "sticky left-0 z-10 bg-orange-500 text-white font-bold email-column-glow"
                           : "bg-zinc-50 font-medium text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300",
-                        !isEmailCol && step >= 2 && "opacity-30"
+                        !isPrimaryKeyCol && step >= 2 && "opacity-30"
                       )}
                     >
                       <span>{col}</span>
@@ -254,12 +261,12 @@ export function UnifiedEnrichmentView({ rows, columns, onStartEnrichment }: Unif
             <TableBody>
               {displayRows.map((row, rowIdx) => (
                 <TableRow key={rowIdx} className="group">
-                  {/* All columns data - highlight email column */}
+                  {/* All columns data - highlight primary key column */}
                   {columns.map((col, colIdx) => {
-                    const isEmailCol = col === emailColumn;
+                    const isPrimaryKeyCol = col === primaryKeyColumn;
                     const cellValue = row[col] || '';
                     
-                    if (isEmailCol) {
+                    if (isPrimaryKeyCol) {
                       const email = cellValue.trim();
                       const isValidEmail = email && EMAIL_REGEX.test(email);
                       return (
@@ -348,12 +355,12 @@ export function UnifiedEnrichmentView({ rows, columns, onStartEnrichment }: Unif
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-4">
                   <h3 className="text-lg font-bold text-[#36322F] dark:text-white">
-                    {emailColumn ? 'Email Column Detected:' : 'Select Email Column:'}
+                    {primaryKeyColumn ? 'Record Primary Key Detected:' : 'Select Record Primary Key:'}
                   </h3>
-                  {emailColumn ? (
+                  {primaryKeyColumn ? (
                     <>
                       <span className="font-mono text-sm bg-orange-100 px-3 py-1 rounded-full border border-orange-300 text-orange-700 dark:bg-orange-900/20 dark:border-orange-700 dark:text-orange-400 font-medium">
-                        {emailColumn}
+                        {primaryKeyColumn}
                       </span>
                       {!showEmailDropdownStep1 && (
                         <Button
@@ -366,7 +373,7 @@ export function UnifiedEnrichmentView({ rows, columns, onStartEnrichment }: Unif
                         </Button>
                       )}
                       {showEmailDropdownStep1 && (
-                        <Select value={emailColumn} onValueChange={(value) => {
+                        <Select value={primaryKeyColumn} onValueChange={(value) => {
                           setEmailColumn(value);
                           setShowEmailDropdownStep1(false);
                         }}>
@@ -384,9 +391,9 @@ export function UnifiedEnrichmentView({ rows, columns, onStartEnrichment }: Unif
                       )}
                     </>
                   ) : (
-                    <Select value={emailColumn} onValueChange={(value) => setEmailColumn(value)}>
+                    <Select value={primaryKeyColumn} onValueChange={(value) => setEmailColumn(value)}>
                       <SelectTrigger className="w-64 bg-white border-orange-300 dark:bg-zinc-800 dark:border-orange-700">
-                        <SelectValue placeholder="Select email column" />
+                        <SelectValue placeholder="Select primary key column" />
                       </SelectTrigger>
                       <SelectContent className="bg-white dark:bg-zinc-800">
                         {columns.map((col) => (
@@ -402,7 +409,7 @@ export function UnifiedEnrichmentView({ rows, columns, onStartEnrichment }: Unif
                 <Button 
                   variant="orange"
                   onClick={() => setStep(2)}
-                  disabled={!emailColumn}
+                  disabled={!primaryKeyColumn}
                   className="px-6"
                 >
                   Next
@@ -411,10 +418,10 @@ export function UnifiedEnrichmentView({ rows, columns, onStartEnrichment }: Unif
             </Card>
 
             {/* Skip List Warning */}
-            {emailColumn && (() => {
+            {primaryKeyColumn && (() => {
               const commonDomains = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'aol.com', 'icloud.com'];
               const skippableEmails = rows.filter(row => {
-                const email = row[emailColumn]?.toLowerCase();
+                const email = row[primaryKeyColumn]?.toLowerCase();
                 if (!email) return false;
                 const domain = email.split('@')[1];
                 return domain && commonDomains.includes(domain);
@@ -435,13 +442,13 @@ export function UnifiedEnrichmentView({ rows, columns, onStartEnrichment }: Unif
           </div>
         )}
 
-        {/* Email column info for step 2+ */}
+        {/* Primary Key Column info for step 2+ */}
         {step >= 2 && (
           <div className="mb-4 flex items-center justify-between p-4 bg-orange-50 rounded-lg border border-orange-200 dark:bg-orange-950/20 dark:border-orange-900/30">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Email Column:</span>
+              <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Record Primary Key:</span>
               <span className="font-mono text-sm bg-white px-3 py-1 rounded-full border border-orange-300 text-orange-700 dark:bg-zinc-800 dark:border-orange-700 dark:text-orange-400">
-                {emailColumn}
+                {primaryKeyColumn}
               </span>
             </div>
             {!showEmailDropdown && (
@@ -455,7 +462,7 @@ export function UnifiedEnrichmentView({ rows, columns, onStartEnrichment }: Unif
               </Button>
             )}
             {showEmailDropdown && (
-              <Select value={emailColumn} onValueChange={(value) => {
+              <Select value={primaryKeyColumn} onValueChange={(value) => {
                 setEmailColumn(value);
                 setShowEmailDropdown(false);
               }}>
@@ -675,7 +682,7 @@ export function UnifiedEnrichmentView({ rows, columns, onStartEnrichment }: Unif
               <Button 
                 variant="orange"
                 className="w-full mt-6 h-10 text-base" 
-                onClick={() => onStartEnrichment(emailColumn, selectedFields)}
+                onClick={() => onStartEnrichment(primaryKeyColumn, selectedFields)}
                 disabled={selectedFields.length === 0}
               >
                 <span className="flex items-center gap-2">

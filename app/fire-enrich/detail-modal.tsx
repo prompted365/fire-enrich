@@ -11,10 +11,10 @@ interface DetailModalProps {
   row: CSVRow;
   result: RowEnrichmentResult | undefined;
   fields: EnrichmentField[];
-  emailColumn?: string;
+  primaryKeyColumn?: string;
 }
 
-export function DetailModal({ isOpen, onClose, row, result, fields, emailColumn }: DetailModalProps) {
+export function DetailModal({ isOpen, onClose, row, result, fields, primaryKeyColumn }: DetailModalProps) {
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -70,7 +70,7 @@ export function DetailModal({ isOpen, onClose, row, result, fields, emailColumn 
           <div className="mb-4">
             <div className="flex items-center gap-2">
               <Mail className="w-4 h-4 text-muted-foreground" />
-              <span className="text-foreground font-medium text-sm">{emailColumn ? row[emailColumn] : Object.values(row)[0]}</span>
+              <span className="text-foreground font-medium text-sm">{primaryKeyColumn ? row[primaryKeyColumn] : Object.values(row)[0]}</span>
             </div>
           </div>
           

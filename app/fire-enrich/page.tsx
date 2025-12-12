@@ -27,7 +27,7 @@ export default function CSVEnrichmentPage() {
     rows: CSVRow[];
     columns: string[];
   } | null>(null);
-  const [emailColumn, setEmailColumn] = useState<string>('');
+  const [primaryKeyColumn, setPrimaryKeyColumn] = useState<string>('');
   const [selectedFields, setSelectedFields] = useState<EnrichmentField[]>([]);
   const [isCheckingEnv, setIsCheckingEnv] = useState(true);
   const [showApiKeyModal, setShowApiKeyModal] = useState(false);
@@ -103,8 +103,8 @@ export default function CSVEnrichmentPage() {
     }
   };
 
-  const handleStartEnrichment = (email: string, fields: EnrichmentField[]) => {
-    setEmailColumn(email);
+  const handleStartEnrichment = (primaryKey: string, fields: EnrichmentField[]) => {
+    setPrimaryKeyColumn(primaryKey);
     setSelectedFields(fields);
     setStep('enrichment');
   };
@@ -120,7 +120,7 @@ export default function CSVEnrichmentPage() {
   const resetProcess = () => {
     setStep('upload');
     setCsvData(null);
-    setEmailColumn('');
+    setPrimaryKeyColumn('');
     setSelectedFields([]);
   };
 
@@ -266,7 +266,7 @@ export default function CSVEnrichmentPage() {
             <EnrichmentTable
               rows={csvData.rows}
               fields={selectedFields}
-              emailColumn={emailColumn}
+              primaryKeyColumn={primaryKeyColumn}
             />
             <div className="mt-6 text-center">
               <Button

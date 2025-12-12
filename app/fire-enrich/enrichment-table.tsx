@@ -16,10 +16,10 @@ import { Textarea } from '@/components/ui/textarea';
 interface EnrichmentTableProps {
   rows: CSVRow[];
   fields: EnrichmentField[];
-  emailColumn?: string;
+  primaryKeyColumn?: string;
 }
 
-export function EnrichmentTable({ rows, fields, emailColumn }: EnrichmentTableProps) {
+export function EnrichmentTable({ rows, fields, primaryKeyColumn }: EnrichmentTableProps) {
   const [results, setResults] = useState<Map<number, RowEnrichmentResult>>(new Map());
   const [status, setStatus] = useState<'idle' | 'processing' | 'completed' | 'cancelled'>('idle');
   const [currentRow, setCurrentRow] = useState(-1);
@@ -107,7 +107,7 @@ export function EnrichmentTable({ rows, fields, emailColumn }: EnrichmentTablePr
         body: JSON.stringify({
           rows,
           fields,
-          emailColumn,
+          primaryKeyColumn,
           useAgents,
           useV2Architecture: true, // Use new agent architecture when agents are enabled
         }),
@@ -209,7 +209,7 @@ export function EnrichmentTable({ rows, fields, emailColumn }: EnrichmentTablePr
       console.error('Failed to start enrichment:', error);
       setStatus('completed');
     }
-  }, [fields, rows, emailColumn, useAgents]);
+  }, [fields, rows, primaryKeyColumn, useAgents]);
 
   useEffect(() => {
     if (status === 'idle') {
@@ -234,7 +234,7 @@ export function EnrichmentTable({ rows, fields, emailColumn }: EnrichmentTablePr
   const downloadCSV = () => {
     // Build headers
     const headers = [
-      emailColumn || 'email',
+      primaryKeyColumn || 'record_primary_key',
       ...fields.map(f => f.displayName),
       ...fields.map(f => `${f.displayName}_confidence`),
       ...fields.map(f => `${f.displayName}_source`)
@@ -247,7 +247,7 @@ export function EnrichmentTable({ rows, fields, emailColumn }: EnrichmentTablePr
       const values: string[] = [];
       
       // Add email
-      const email = emailColumn ? row[emailColumn] : Object.values(row)[0];
+      const primaryKey = primaryKeyColumn ? row[primaryKeyColumn] : Object.values(row)[0];
       values.push(`"${email || ''}"`);
       
       // Add field values
@@ -311,7 +311,7 @@ export function EnrichmentTable({ rows, fields, emailColumn }: EnrichmentTablePr
       },
       data: rows.map((row, index) => {
         const result = results.get(index);
-        const email = emailColumn ? row[emailColumn] : Object.values(row)[0];
+        const primaryKey = primaryKeyColumn ? row[primaryKeyColumn] : Object.values(row)[0];
         
         const enrichedRow: Record<string, unknown> = {
           _index: index,
@@ -409,8 +409,8 @@ export function EnrichmentTable({ rows, fields, emailColumn }: EnrichmentTablePr
     if (!result || !row) return;
     
     // Format data nicely for Google Docs
-    const emailValue = emailColumn ? row[emailColumn] : '';
-    let formattedData = `Email: ${emailValue}\n\n`;
+    const primaryKeyValue = primaryKeyColumn ? row[primaryKeyColumn] : '';
+    let formattedData = `Email: ${primaryKeyValue}\n\n`;
     
     fields.forEach(field => {
       const enrichment = result.enrichments[field.name];
@@ -620,7 +620,7 @@ export function EnrichmentTable({ rows, fields, emailColumn }: EnrichmentTablePr
           <thead>
             <tr className="border-b-2 border-orange-100">
               <th className="sticky left-0 z-10 bg-background dark:bg-zinc-900 px-4 py-3 text-left text-sm font-semibold text-foreground dark:text-muted-foreground border-r-2 border-orange-400 shadow-[2px_0_8px_rgba(251,146,60,0.3)]">
-                {emailColumn || 'Email'}
+                {primaryKeyColumn || 'Primary Key'}
               </th>
               {fields.map(field => (
                 <th key={field.name} className="px-4 py-3 text-left text-sm font-medium text-foreground bg-muted">
@@ -671,7 +671,7 @@ export function EnrichmentTable({ rows, fields, emailColumn }: EnrichmentTablePr
                         )}
                         <div className="flex items-center gap-1">
                           <div className="text-foreground font-mono text-sm truncate max-w-[180px]">
-                            {emailColumn ? row[emailColumn] : Object.values(row)[0]}
+                            {primaryKeyColumn ? row[primaryKeyColumn] : Object.values(row)[0]}
                           </div>
                           {/* Show additional columns if CSV has many columns */}
                           {Object.keys(row).length > fields.length + 1 && (
@@ -848,7 +848,7 @@ export function EnrichmentTable({ rows, fields, emailColumn }: EnrichmentTablePr
             <>
               <SheetHeader className="pb-4 border-b border-zinc-200 dark:border-zinc-800">
                 <SheetTitle className="text-2xl font-bold text-[#36322F] dark:text-white">
-                  {emailColumn ? selectedRow.row[emailColumn] : Object.values(selectedRow.row)[0]}
+                  {primaryKeyColumn ? selectedRow.row[primaryKeyColumn] : Object.values(selectedRow.row)[0]}
                 </SheetTitle>
                 {/* Email and Website buttons */}
                 <div className="flex items-center gap-3 mt-3">
@@ -867,10 +867,10 @@ export function EnrichmentTable({ rows, fields, emailColumn }: EnrichmentTablePr
                         </a>
                       )}
                       {/* Email display */}
-                      {emailColumn && selectedRow.row[emailColumn] && (
+                      {primaryKeyColumn && selectedRow.row[primaryKeyColumn] && (
                         <span className="text-zinc-600 dark:text-zinc-400 flex items-center gap-1 text-sm">
                           <Mail size={16} />
-                          {selectedRow.row[emailColumn]}
+                          {selectedRow.row[primaryKeyColumn]}
                         </span>
                       )}
                     </>
@@ -1130,7 +1130,7 @@ export function EnrichmentTable({ rows, fields, emailColumn }: EnrichmentTablePr
           .filter(([, result]) => result.status === 'skipped')
           .map(([index, result]) => ({
             index,
-            email: emailColumn ? rows[index][emailColumn] : '',
+            email: primaryKeyColumn ? rows[index][primaryKeyColumn] : '',
             reason: result.error || 'Common email provider'
           }));
         
