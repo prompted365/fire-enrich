@@ -10,8 +10,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "ReconnAIssance",
-  description: "Enrich your data with AI-powered reconnaissance",
+  title: "slate - agentMatriX",
+  description: "Multi-agent data enrichment platform. Build, merge, and enrich datasets with 7 specialized AI agents.",
 };
 
 export default function RootLayout({

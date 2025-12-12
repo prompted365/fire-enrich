@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { ArrowLeft, ExternalLink, Loader2, Table2 } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { CSVUploader } from "./fire-enrich/csv-uploader";
@@ -199,12 +200,14 @@ export default function HomePage() {
     <div className="px-4 sm:px-6 lg:px-8 py-4 max-w-7xl mx-auto font-inter">
       <div className="flex justify-between items-center">
         <Link href="/" className="logo-reveal">
-          <Image
-            src="/reconnaissance-logo.svg"
-            alt="ReconnAIssance Logo"
-            width={180}
-            height={32}
-          />
+          <div className="flex items-center gap-2">
+            <div className="text-2xl font-bold bg-gradient-to-r from-[#36322F] to-orange-500 bg-clip-text text-transparent dark:from-white dark:to-orange-400">
+              slate
+            </div>
+            <div className="text-xs text-orange-600 dark:text-orange-400 font-semibold tracking-wider">
+              agentMatriX
+            </div>
+          </div>
         </Link>
         <div className="flex items-center gap-2">
           <Button
@@ -239,20 +242,42 @@ export default function HomePage() {
       </div>
 
       <div className="text-center pt-8 pb-6">
-        <h1 className="text-[2.5rem] lg:text-[3.8rem] text-[#36322F] dark:text-white font-semibold tracking-tight leading-[0.9] opacity-0 animate-fade-up [animation-duration:500ms] [animation-delay:200ms] [animation-fill-mode:forwards]">
-          <span className="relative px-1 text-transparent bg-clip-text bg-gradient-to-tr from-red-600 to-yellow-500 inline-flex justify-center items-center">
-            ReconnAIssance
-          </span>
-          <span className="block leading-[1.1] opacity-0 animate-fade-up [animation-duration:500ms] [animation-delay:400ms] [animation-fill-mode:forwards]">
-            Drag, Drop, Enrich.
+        <h1 className="text-[2.5rem] lg:text-[4.5rem] text-[#36322F] dark:text-white font-bold tracking-tight leading-[0.9] opacity-0 animate-fade-up [animation-duration:500ms] [animation-delay:200ms] [animation-fill-mode:forwards]">
+          <span className="relative px-1 text-transparent bg-clip-text bg-gradient-to-r from-[#36322F] to-orange-500 dark:from-white dark:to-orange-400 inline-flex justify-center items-center">
+            slate
           </span>
         </h1>
-        <p className="text-sm text-muted-foreground mt-3 opacity-0 animate-fade-up [animation-duration:500ms] [animation-delay:600ms] [animation-fill-mode:forwards]">
-          {FIRE_ENRICH_CONFIG.FEATURES.IS_UNLIMITED ? 
-            'Unlimited enrichment' : 
-            `Hosted limit: ${FIRE_ENRICH_CONFIG.CSV_LIMITS.MAX_ROWS} rows, ${FIRE_ENRICH_CONFIG.CSV_LIMITS.MAX_COLUMNS} columns • Self-deployment: Unlimited`
-          }
+        <p className="text-xl lg:text-2xl text-orange-600 dark:text-orange-400 font-semibold tracking-wide mt-2 mb-4 opacity-0 animate-fade-up [animation-duration:500ms] [animation-delay:400ms] [animation-fill-mode:forwards]">
+          agentMatriX
         </p>
+        <p className="text-base text-muted-foreground mt-3 opacity-0 animate-fade-up [animation-duration:500ms] [animation-delay:600ms] [animation-fill-mode:forwards] max-w-2xl mx-auto">
+          Build, merge, and enrich datasets with 7 specialized AI agents working in perfect coordination
+        </p>
+        
+        {/* Quick Start Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl mx-auto mt-8 opacity-0 animate-fade-up [animation-duration:500ms] [animation-delay:800ms] [animation-fill-mode:forwards]">
+          <Link href="/fire-enrich">
+            <Card className="p-6 hover:shadow-lg transition-all cursor-pointer hover:scale-105 border-2 hover:border-orange-500">
+              <div className="text-3xl mb-3">📤</div>
+              <h3 className="font-semibold mb-2">Upload & Enrich</h3>
+              <p className="text-sm text-muted-foreground">Start with your CSV and let agentMatriX enrich it</p>
+            </Card>
+          </Link>
+          <Link href="/workbench">
+            <Card className="p-6 hover:shadow-lg transition-all cursor-pointer hover:scale-105 border-2 hover:border-orange-500">
+              <div className="text-3xl mb-3">✨</div>
+              <h3 className="font-semibold mb-2">Create Slate</h3>
+              <p className="text-sm text-muted-foreground">Build a new dataset from scratch with custom fields</p>
+            </Card>
+          </Link>
+          <Link href="/workbench">
+            <Card className="p-6 hover:shadow-lg transition-all cursor-pointer hover:scale-105 border-2 hover:border-orange-500">
+              <div className="text-3xl mb-3">💝</div>
+              <h3 className="font-semibold mb-2">Merge Slates</h3>
+              <p className="text-sm text-muted-foreground">AI-powered merging with intelligent field mapping</p>
+            </Card>
+          </Link>
+        </div>
       </div>
 
       {/* Main Content */}
@@ -314,7 +339,7 @@ export default function HomePage() {
       )}
 
       <footer className="py-8 text-center text-sm text-muted-foreground dark:text-muted-foreground">
-        <p className="opacity-75">Made with ❤️ by the ReconnAIssance team</p>
+        <p className="opacity-75">Made with ❤️ by the slate team</p>
       </footer>
 
       {/* API Key Modal */}

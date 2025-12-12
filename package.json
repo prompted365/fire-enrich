@@ -1,6 +1,6 @@
 {
-  "name": "fire-enrich-standalone",
-  "version": "0.1.0",
+  "name": "slate-agentmatrix",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",

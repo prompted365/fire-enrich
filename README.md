@@ -1,10 +1,11 @@
-# ReconnAIssance - AI-Powered Data Enrichment Tool
+# slate
+## agentMatriX - Multi-Agent Data Enrichment
 
 <div align="center">
-  <img src="https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExNjJwMnF2cW5zbXBhbGV6NXBpb3lkZmVhMWEwY3hmdmt3d3ZtbWc5YSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/QhpbWI09KyFZ0rwD72/giphy.gif" alt="ReconnAIssance Demo" width="100%" />
+  <img src="https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExNjJwMnF2cW5zbXBhbGV6NXBpb3lkZmVhMWEwY3hmdmt3d3ZtbWc5YSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/QhpbWI09KyFZ0rwD72/giphy.gif" alt="slate - agentMatriX" width="100%" />
 </div>
 
-Turn a simple contact list into a rich dataset with company profiles, funding data, tech stacks, and more. Powered by [{{SCRAPER_SERVICE_NAME}}](https://www.{{SCRAPER_SERVICE_DOMAIN}}/) and a multi-agent AI system.
+**slate** transforms simple contact lists into rich, multi-dimensional datasets. Build, merge, and enrich data with our **agentMatriX** - a coordinated system of 7 specialized AI agents powered by [{{SCRAPER_SERVICE_NAME}}](https://www.{{SCRAPER_SERVICE_DOMAIN}}/).
 
 ## ✨ Features
 

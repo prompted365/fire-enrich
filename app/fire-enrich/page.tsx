@@ -198,12 +198,14 @@ export default function CSVEnrichmentPage() {
     <div className="px-4 sm:px-6 lg:px-8 py-4 max-w-7xl mx-auto font-inter">
       <div className="flex justify-between items-center">
         <Link href="/" className="logo-reveal">
-          <Image
-            src="/reconnaissance-logo.svg"
-            alt="ReconnAIssance Logo"
-            width={180}
-            height={32}
-          />
+          <div className="flex items-center gap-2">
+            <div className="text-2xl font-bold bg-gradient-to-r from-[#36322F] to-orange-500 bg-clip-text text-transparent dark:from-white dark:to-orange-400">
+              slate
+            </div>
+            <div className="text-xs text-orange-600 dark:text-orange-400 font-semibold tracking-wider">
+              agentMatriX
+            </div>
+          </div>
         </Link>
         <div className="flex items-center gap-2">
           <ThemeToggle />
@@ -296,7 +298,7 @@ export default function CSVEnrichmentPage() {
       )}
 
       <footer className="py-8 text-center text-sm text-muted-foreground dark:text-muted-foreground">
-        <p className="opacity-75">Made with ❤️ by the ReconnAIssance team</p>
+        <p className="opacity-75">Made with ❤️ by the slate team</p>
       </footer>
 
       {/* API Key Modal */}

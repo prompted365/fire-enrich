@@ -174,7 +174,7 @@ export function SettingsPanel({ settings, onSettingsChange, fields = [] }: Setti
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Settings className="h-5 w-5" />
-            ReconnAIssance Configuration
+            agentMatriX Configuration
           </DialogTitle>
           <DialogDescription>
             Customize agent behavior, context mappings, and advanced enrichment settings
@@ -494,7 +494,7 @@ export function SettingsPanel({ settings, onSettingsChange, fields = [] }: Setti
                     <AccordionTrigger>Multi-Agent System</AccordionTrigger>
                     <AccordionContent className="text-sm space-y-2">
                       <p>
-                        ReconnAIssance uses specialized agents that coordinate to gather comprehensive data:
+                        agentMatriX coordinates 7 specialized agents to gather comprehensive data:
                       </p>
                       <ul className="list-disc list-inside space-y-1 ml-4">
                         <li>Each agent is an expert in a specific domain</li>
@@ -523,7 +523,7 @@ export function SettingsPanel({ settings, onSettingsChange, fields = [] }: Setti
                     <AccordionTrigger>Model Context Protocol</AccordionTrigger>
                     <AccordionContent className="text-sm space-y-2">
                       <p>
-                        MCP enables external AI systems to use ReconnAIssance as a tool:
+                        MCP enables external AI systems to use slate as a tool:
                       </p>
                       <ul className="list-disc list-inside space-y-1 ml-4">
                         <li>Expose enrichment capabilities as MCP tools</li>
