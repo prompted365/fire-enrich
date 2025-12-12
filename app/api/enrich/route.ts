@@ -193,7 +193,9 @@ export async function POST(request: NextRequest) {
                       })}\n\n`
                     )
                   );
-                }
+                },
+                i,
+                rows
               );
               result.rowIndex = i; // Set the correct row index
               
