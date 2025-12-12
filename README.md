@@ -6,6 +6,21 @@
 
 Turn a simple contact list into a rich dataset with company profiles, funding data, tech stacks, and more. Powered by [{{SCRAPER_SERVICE_NAME}}](https://www.{{SCRAPER_SERVICE_DOMAIN}}/) and a multi-agent AI system.
 
+## ✨ Features
+
+- **🤖 Multi-Agent Architecture** - Specialized agents for company research, funding, leadership, products, tech stack
+- **🎨 Full Customization UI** - Configure everything from the settings panel:
+  - Enable/disable individual agents
+  - Customize global instructions and context mappings
+  - Field-specific instruction overrides
+  - Performance and quality tuning
+- **⚡ Real-time Streaming** - Server-sent events for instant enrichment feedback
+- **🌓 Dark Mode** - Beautiful UI that adapts to your preferences
+- **💾 Session Persistence** - All enrichment sessions saved to database
+- **📤 Export** - Download results as CSV or JSON
+- **🔌 MCP Support** - Model Context Protocol for external agent integrations
+- **🎯 Agent Toggle** - Smart recommendations based on your selected fields
+
 ## Technologies
 
 - **{{SCRAPER_SERVICE_NAME}}**: Web scraping and content aggregation

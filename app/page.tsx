@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ExternalLink, Loader2 } from "lucide-react";
+import { ArrowLeft, ExternalLink, Loader2, Table2 } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { CSVUploader } from "./fire-enrich/csv-uploader";
 import { UnifiedEnrichmentView } from "./fire-enrich/unified-enrichment-view";
@@ -207,6 +207,17 @@ export default function HomePage() {
           />
         </Link>
         <div className="flex items-center gap-2">
+          <Button
+            asChild
+            variant="outline"
+            size="sm"
+            className="gap-2"
+          >
+            <Link href="/workbench">
+              <Table2 className="h-4 w-4" />
+              Workbench
+            </Link>
+          </Button>
           <ThemeToggle />
           <Button
             asChild
