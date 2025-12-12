@@ -88,6 +88,7 @@ export function AnalysisPanel({ data, columns, open, onOpenChange }: AnalysisPan
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
 
   const handleAnalyze = async () => {
     setIsAnalyzing(true);
@@ -128,6 +129,52 @@ export function AnalysisPanel({ data, columns, open, onOpenChange }: AnalysisPan
       setError('Failed to analyze slate. Please try again.');
     } finally {
       setIsAnalyzing(false);
+    }
+  };
+
+  const handleExportReport = async () => {
+    if (!analysis) return;
+
+    setIsExporting(true);
+    try {
+      const response = await fetch('/api/export-report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          analysis,
+          includeRawData: true,
+          data,
+          columns,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to export report');
+      }
+
+      // Download the PDF
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `analysis-report-${Date.now()}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      // Mini confetti for export
+      confetti({
+        particleCount: 30,
+        spread: 40,
+        origin: { y: 0.7 },
+        colors: ['#f97316', '#fb923c'],
+      });
+    } catch (err) {
+      console.error('Export error:', err);
+      setError('Failed to export report. Please try again.');
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -266,13 +313,22 @@ export function AnalysisPanel({ data, columns, open, onOpenChange }: AnalysisPan
                 Re-analyze
               </Button>
               <Button
-                onClick={() => {
-                  // TODO: Implement export
-                  console.log('Export analysis', analysis);
-                }}
+                onClick={handleExportReport}
                 variant="outline"
+                disabled={isExporting}
+                className="gap-2"
               >
-                Export Report
+                {isExporting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Exporting...
+                  </>
+                ) : (
+                  <>
+                    <TrendingUp className="h-4 w-4" />
+                    Export PDF Report
+                  </>
+                )}
               </Button>
             </div>
           </div>
