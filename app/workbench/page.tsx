@@ -8,10 +8,12 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Table2, Plus, Search, Calendar, FileSpreadsheet, Loader2 } from "lucide-react";
+import { ArrowLeft, Table2, Plus, Search, Calendar, FileSpreadsheet, Loader2, Sparkles, Combine } from "lucide-react";
 import Link from "next/link";
 import { WorkbenchGrid } from "./workbench-grid";
 import { SessionBrowser } from "./session-browser";
+import { SlateCreator } from "./slate-creator";
+import { SlateMerge } from "./slate-merge";
 
 interface Session {
   id: string;
@@ -117,6 +119,24 @@ export default function WorkbenchPage() {
                 <Button onClick={loadSessions} variant="outline" size="sm">
                   Refresh
                 </Button>
+                <SlateCreator 
+                  trigger={
+                    <Button className="bg-orange-500 hover:bg-orange-600 gap-2">
+                      <Sparkles className="h-4 w-4" />
+                      Create Slate
+                    </Button>
+                  }
+                />
+                <SlateMerge 
+                  sessions={sessions}
+                  onMergeComplete={loadSessions}
+                  trigger={
+                    <Button variant="outline" className="gap-2 border-orange-500 text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-950/20">
+                      <Combine className="h-4 w-4" />
+                      Merge Slates
+                    </Button>
+                  }
+                />
               </div>
             )}
           </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import confetti from "canvas-confetti";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -165,6 +166,14 @@ export function WorkbenchGrid({ sessionId }: WorkbenchGridProps) {
       console.log('Session saved:', result);
       toast.success("Changes saved successfully");
       setHasChanges(false);
+      
+      // Little celebration for saving!
+      confetti({
+        particleCount: 50,
+        spread: 50,
+        origin: { y: 0.7 },
+        colors: ['#f97316', '#fb923c']
+      });
     } catch (error) {
       console.error('Error saving session:', error);
       toast.error("Failed to save changes");
@@ -254,6 +263,14 @@ export function WorkbenchGrid({ sessionId }: WorkbenchGridProps) {
 
       setEnrichmentProgress({ total: rowsToEnrich.length, completed: rowsToEnrich.length });
       toast.success(`Enriched ${rowsToEnrich.length} rows successfully`);
+      
+      // Celebrate with confetti!
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#f97316', '#fb923c', '#fdba74']
+      });
     } catch (error) {
       console.error('Enrichment error:', error);
       toast.error("Enrichment failed");

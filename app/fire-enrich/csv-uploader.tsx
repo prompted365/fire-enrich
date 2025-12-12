@@ -5,12 +5,72 @@ import { useDropzone } from 'react-dropzone';
 import Papa from 'papaparse';
 import { CSVRow } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { Upload, FileSpreadsheet } from 'lucide-react';
+import { Upload, FileSpreadsheet, Sparkles } from 'lucide-react';
 import { FIRE_ENRICH_CONFIG, ERROR_MESSAGES } from './config';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface CSVUploaderProps {
   onUpload: (rows: CSVRow[], columns: string[]) => void;
 }
+
+const SAMPLE_TEMPLATES = [
+  { 
+    id: 'company', 
+    label: 'Company Research', 
+    file: '/samples/company-research.csv',
+    description: 'Company profiles and industry data',
+    icon: '🏢'
+  },
+  { 
+    id: 'funding', 
+    label: 'Funding Research', 
+    file: '/samples/funding-research.csv',
+    description: 'Funding rounds and investors',
+    icon: '💰'
+  },
+  { 
+    id: 'people', 
+    label: 'People Research', 
+    file: '/samples/people-research.csv',
+    description: 'Leadership and contact info',
+    icon: '👥'
+  },
+  { 
+    id: 'product', 
+    label: 'Product Research', 
+    file: '/samples/product-research.csv',
+    description: 'Product features and positioning',
+    icon: '🚀'
+  },
+  { 
+    id: 'techstack', 
+    label: 'Tech Stack Research', 
+    file: '/samples/tech-stack-research.csv',
+    description: 'Technology and infrastructure',
+    icon: '⚙️'
+  },
+  { 
+    id: 'metrics', 
+    label: 'Metrics Research', 
+    file: '/samples/metrics-research.csv',
+    description: 'Company metrics and growth',
+    icon: '📊'
+  },
+  { 
+    id: 'contact', 
+    label: 'Contact Enrichment', 
+    file: '/samples/contact-enrichment.csv',
+    description: 'Basic contact list example',
+    icon: '📧'
+  },
+];
 
 export function CSVUploader({ onUpload }: CSVUploaderProps) {
   const [isProcessing, setIsProcessing] = useState(false);
@@ -38,14 +98,7 @@ export function CSVUploader({ onUpload }: CSVUploaderProps) {
         const headers = Object.keys(results.data[0] as object);
         const rows = results.data as CSVRow[];
 
-        // Check column limit
-        if (headers.length > FIRE_ENRICH_CONFIG.CSV_LIMITS.MAX_COLUMNS) {
-          setError(
-            `${ERROR_MESSAGES.TOO_MANY_COLUMNS}\n${ERROR_MESSAGES.UPGRADE_PROMPT}`
-          );
-          setIsProcessing(false);
-          return;
-        }
+        // No longer checking column limit - use token limits per cell instead
 
         // Filter out empty rows
         const validRows = rows.filter(row => 
@@ -75,6 +128,42 @@ export function CSVUploader({ onUpload }: CSVUploaderProps) {
       transformHeader: (header) => header.trim(),
       transform: (value) => value.trim(),
     });
+  }, [onUpload]);
+
+  const loadSampleCSV = useCallback(async (sampleFile: string) => {
+    setIsProcessing(true);
+    setError(null);
+
+    try {
+      const response = await fetch(sampleFile);
+      const csvText = await response.text();
+      
+      Papa.parse(csvText, {
+        complete: (results) => {
+          if (results.errors.length > 0) {
+            setError(`CSV parsing error: ${results.errors[0].message}`);
+            setIsProcessing(false);
+            return;
+          }
+
+          const headers = Object.keys(results.data[0] as object);
+          const rows = results.data as CSVRow[];
+          const validRows = rows.filter(row => 
+            Object.values(row).some(value => value && String(value).trim() !== '')
+          );
+
+          setIsProcessing(false);
+          onUpload(validRows, headers);
+        },
+        header: true,
+        skipEmptyLines: true,
+        transformHeader: (header) => header.trim(),
+        transform: (value) => value.trim(),
+      });
+    } catch (err) {
+      setError('Failed to load sample CSV');
+      setIsProcessing(false);
+    }
   }, [onUpload]);
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
@@ -175,32 +264,39 @@ export function CSVUploader({ onUpload }: CSVUploaderProps) {
         </div>
       )}
 
-      <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-3">
-        <a 
-          href="/sample-data.csv" 
-          download="sample-data.csv"
-          className="block p-3 bg-orange-50 rounded-lg border border-orange-200 dark:bg-orange-950/20 dark:border-orange-900/30 hover:bg-orange-100 dark:hover:bg-orange-950/30 transition-colors cursor-pointer"
-        >
-          <div className="flex items-center gap-2 mb-1">
-            <div className="w-6 h-6 bg-orange-500 rounded flex items-center justify-center">
-              <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
-              </svg>
+      <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-3">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <div className="block p-3 bg-orange-50 rounded-lg border border-orange-200 dark:bg-orange-950/20 dark:border-orange-900/30 hover:bg-orange-100 dark:hover:bg-orange-950/30 transition-colors cursor-pointer">
+              <div className="flex items-center gap-2 mb-1">
+                <div className="w-6 h-6 bg-orange-500 rounded flex items-center justify-center">
+                  <Sparkles className="w-3 h-3 text-white" />
+                </div>
+                <h3 className="text-sm font-medium text-[#36322F] dark:text-white">Load Sample Template</h3>
+              </div>
+              <p className="text-xs text-muted-foreground">Choose from {SAMPLE_TEMPLATES.length} agent templates</p>
             </div>
-            <h3 className="text-sm font-medium text-[#36322F] dark:text-white">Download Sample</h3>
-          </div>
-          <p className="text-xs text-muted-foreground">Try our sample CSV file</p>
-        </a>
-        
-        <div className="p-3 bg-zinc-100 rounded-lg border border-zinc-200 dark:bg-zinc-800 dark:border-zinc-700">
-          <div className="flex items-center gap-2 mb-1">
-            <div className="w-6 h-6 bg-[#36322F] rounded flex items-center justify-center dark:bg-zinc-700">
-              <span className="text-white text-xs font-bold">@</span>
-            </div>
-            <h3 className="text-sm font-medium text-[#36322F] dark:text-white">Identifier Column</h3>
-          </div>
-          <p className="text-xs text-muted-foreground">Must include contact identifiers</p>
-        </div>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-80">
+            <DropdownMenuLabel>Sample Templates</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            {SAMPLE_TEMPLATES.map((template) => (
+              <DropdownMenuItem 
+                key={template.id}
+                onClick={() => loadSampleCSV(template.file)}
+                className="cursor-pointer"
+              >
+                <div className="flex items-start gap-3 py-1">
+                  <span className="text-2xl">{template.icon}</span>
+                  <div>
+                    <div className="font-medium">{template.label}</div>
+                    <div className="text-xs text-muted-foreground">{template.description}</div>
+                  </div>
+                </div>
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
         
         <div className="p-3 bg-zinc-100 rounded-lg border border-zinc-200 dark:bg-zinc-800 dark:border-zinc-700">
           <div className="flex items-center gap-2 mb-1">
@@ -215,12 +311,12 @@ export function CSVUploader({ onUpload }: CSVUploaderProps) {
           </div>
           <p className="text-xs text-muted-foreground">
             {FIRE_ENRICH_CONFIG.FEATURES.IS_UNLIMITED 
-              ? 'Unlimited rows and columns'
+              ? `Unlimited rows • ${FIRE_ENRICH_CONFIG.PROCESSING.MAX_TOKENS_PER_CELL} tokens/cell`
               : (
                 <>
-                  Demo version limited to {FIRE_ENRICH_CONFIG.CSV_LIMITS.MAX_ROWS} rows and {FIRE_ENRICH_CONFIG.CSV_LIMITS.MAX_COLUMNS} columns
+                  Demo version limited to {FIRE_ENRICH_CONFIG.CSV_LIMITS.MAX_ROWS} rows
                   <br />
-                  <span className="text-[10px] opacity-80">(Unlimited when self-hosted)</span>
+                  <span className="text-[10px] opacity-80">Max {FIRE_ENRICH_CONFIG.PROCESSING.MAX_TOKENS_PER_CELL} tokens per cell</span>
                 </>
               )
             }

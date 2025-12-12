@@ -1,0 +1,11 @@
+company_name,website,known_tech
+Vercel,vercel.com,Next.js
+Netlify,netlify.com,React
+Supabase,supabase.com,PostgreSQL
+PlanetScale,planetscale.com,MySQL
+Cloudflare,cloudflare.com,CDN
+Datadog,datadoghq.com,Monitoring
+Sentry,sentry.io,Error Tracking
+Postman,postman.com,API Testing
+MongoDB,mongodb.com,NoSQL
+Redis,redis.com,Cache

@@ -7,13 +7,14 @@ export const FIRE_ENRICH_CONFIG = {
   // CSV upload limits
   CSV_LIMITS: {
     MAX_ROWS: isUnlimitedMode ? Infinity : 15,
-    MAX_COLUMNS: isUnlimitedMode ? Infinity : 5,
+    // Removed MAX_COLUMNS in favor of token-based limits
   },
   
   // Processing configuration
   PROCESSING: {
     DELAY_BETWEEN_ROWS_MS: 1000,
     MAX_RETRIES: 3,
+    MAX_TOKENS_PER_CELL: isUnlimitedMode ? 8000 : 2000, // Max tokens for each cell enrichment
   },
   
   // Request limits
@@ -31,6 +32,5 @@ export const FIRE_ENRICH_CONFIG = {
 // Error messages
 export const ERROR_MESSAGES = {
   TOO_MANY_ROWS: `CSV file contains too many rows. Maximum allowed: ${FIRE_ENRICH_CONFIG.CSV_LIMITS.MAX_ROWS} rows`,
-  TOO_MANY_COLUMNS: `CSV file contains too many columns. Maximum allowed: ${FIRE_ENRICH_CONFIG.CSV_LIMITS.MAX_COLUMNS} columns`,
-  UPGRADE_PROMPT: isUnlimitedMode ? '' : 'To process larger datasets with unlimited rows and columns, clone the repository and run it locally.',
+  UPGRADE_PROMPT: isUnlimitedMode ? '' : 'To process larger datasets with unlimited rows, clone the repository and run it locally.',
 } as const;
