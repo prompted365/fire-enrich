@@ -253,6 +253,10 @@ export function getTemplate(id: string): ReportTemplate | undefined {
   return REPORT_TEMPLATES.find((t) => t.id === id);
 }
 
+export function getReportTemplates(): ReportTemplate[] {
+  return REPORT_TEMPLATES;
+}
+
 export function getTemplatesByType(type: ReportTemplate['type']): ReportTemplate[] {
   return REPORT_TEMPLATES.filter((t) => t.type === type);
 }

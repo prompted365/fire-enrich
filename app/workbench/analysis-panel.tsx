@@ -21,8 +21,13 @@ import {
   Sparkles,
   BarChart3,
   CheckCircle2,
+  FileText,
+  Download,
+  FileCode,
+  Table,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { ReportTemplateSelector } from './report-template-selector';
 
 interface AnalysisInsight {
   id: string;
@@ -89,6 +94,7 @@ export function AnalysisPanel({ data, columns, open, onOpenChange }: AnalysisPan
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
+  const [showTemplateSelector, setShowTemplateSelector] = useState(false);
 
   const handleAnalyze = async () => {
     setIsAnalyzing(true);
@@ -132,7 +138,7 @@ export function AnalysisPanel({ data, columns, open, onOpenChange }: AnalysisPan
     }
   };
 
-  const handleExportReport = async () => {
+  const handleExportReport = async (format: 'pdf' | 'html' | 'excel' = 'pdf') => {
     if (!analysis) return;
 
     setIsExporting(true);
@@ -145,6 +151,7 @@ export function AnalysisPanel({ data, columns, open, onOpenChange }: AnalysisPan
           includeRawData: true,
           data,
           columns,
+          format,
         }),
       });
 
@@ -152,12 +159,16 @@ export function AnalysisPanel({ data, columns, open, onOpenChange }: AnalysisPan
         throw new Error('Failed to export report');
       }
 
-      // Download the PDF
+      // Download the file
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `analysis-report-${Date.now()}.pdf`;
+      
+      // Set filename based on format
+      const extension = format === 'pdf' ? 'pdf' : format === 'html' ? 'html' : 'xlsx';
+      a.download = `analysis-report-${Date.now()}.${extension}`;
+      
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -178,7 +189,42 @@ export function AnalysisPanel({ data, columns, open, onOpenChange }: AnalysisPan
     }
   };
 
+  const handleCustomExport = async (templateId: string, customOptions: any) => {
+    if (!analysis) return;
+
+    try {
+      const response = await fetch('/api/export-report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          analysis,
+          data,
+          columns,
+          ...customOptions,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to export report');
+      }
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${templateId}-report-${Date.now()}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Export error:', err);
+      throw err;
+    }
+  };
+
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
@@ -302,38 +348,89 @@ export function AnalysisPanel({ data, columns, open, onOpenChange }: AnalysisPan
             </div>
 
             {/* Actions */}
-            <div className="flex gap-2">
-              <Button
-                onClick={handleAnalyze}
-                variant="outline"
-                className="gap-2"
-                disabled={isAnalyzing}
-              >
-                <Sparkles className="h-4 w-4" />
-                Re-analyze
-              </Button>
-              <Button
-                onClick={handleExportReport}
-                variant="outline"
-                disabled={isExporting}
-                className="gap-2"
-              >
-                {isExporting ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Exporting...
-                  </>
-                ) : (
-                  <>
-                    <TrendingUp className="h-4 w-4" />
-                    Export PDF Report
-                  </>
-                )}
-              </Button>
+            <div className="space-y-2">
+              <div className="flex gap-2">
+                <Button
+                  onClick={handleAnalyze}
+                  variant="outline"
+                  className="gap-2"
+                  disabled={isAnalyzing}
+                >
+                  <Sparkles className="h-4 w-4" />
+                  Re-analyze
+                </Button>
+                <Button
+                  onClick={() => setShowTemplateSelector(true)}
+                  variant="default"
+                  className="gap-2 bg-orange-500 hover:bg-orange-600"
+                >
+                  <FileText className="h-4 w-4" />
+                  Custom Report
+                </Button>
+              </div>
+              
+              <div className="flex gap-2">
+                <span className="text-xs text-muted-foreground self-center mr-2">Quick Export:</span>
+                <Button
+                  onClick={() => handleExportReport('pdf')}
+                  variant="outline"
+                  size="sm"
+                  disabled={isExporting}
+                  className="gap-2"
+                >
+                  {isExporting ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <Download className="h-3 w-3" />
+                  )}
+                  PDF
+                </Button>
+                <Button
+                  onClick={() => handleExportReport('html')}
+                  variant="outline"
+                  size="sm"
+                  disabled={isExporting}
+                  className="gap-2"
+                >
+                  {isExporting ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <FileCode className="h-3 w-3" />
+                  )}
+                  HTML
+                </Button>
+                <Button
+                  onClick={() => handleExportReport('excel')}
+                  variant="outline"
+                  size="sm"
+                  disabled={isExporting}
+                  className="gap-2"
+                >
+                  {isExporting ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <Table className="h-3 w-3" />
+                  )}
+                  Excel
+                </Button>
+              </div>
             </div>
           </div>
         )}
       </DialogContent>
     </Dialog>
+
+    {/* Template Selector Modal */}
+    {analysis && (
+      <ReportTemplateSelector
+        open={showTemplateSelector}
+        onOpenChange={setShowTemplateSelector}
+        analysis={analysis}
+        data={data}
+        columns={columns}
+        onExport={handleCustomExport}
+      />
+    )}
+    </>
   );
 }

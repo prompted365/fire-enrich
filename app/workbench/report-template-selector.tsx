@@ -221,6 +221,25 @@ export function ReportTemplateSelector({
                     <Card className="p-4 space-y-4">
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
+                          <Label htmlFor="format">Export Format</Label>
+                          <Select
+                            value={customOptions.format || 'pdf'}
+                            onValueChange={(value) =>
+                              setCustomOptions({ ...customOptions, format: value })
+                            }
+                          >
+                            <SelectTrigger id="format">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="pdf">PDF Document</SelectItem>
+                              <SelectItem value="html">HTML Report</SelectItem>
+                              <SelectItem value="excel">Excel Spreadsheet</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-2">
                           <Label htmlFor="color-scheme">Color Scheme</Label>
                           <Select
                             value={customOptions.colorScheme || 'slate'}
@@ -234,31 +253,31 @@ export function ReportTemplateSelector({
                             <SelectContent>
                               <SelectItem value="slate">Slate Orange</SelectItem>
                               <SelectItem value="professional">Professional Blue</SelectItem>
-                              <SelectItem value="corporate">Corporate Gray</SelectItem>
+                              <SelectItem value="corporate">Corporate Green</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
+                      </div>
 
-                        <div className="space-y-2">
-                          <Label htmlFor="max-rows">Max Data Rows</Label>
-                          <Select
-                            value={String(customOptions.maxDataRows || 20)}
-                            onValueChange={(value) =>
-                              setCustomOptions({ ...customOptions, maxDataRows: Number(value) })
-                            }
-                          >
-                            <SelectTrigger id="max-rows">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="0">None</SelectItem>
-                              <SelectItem value="10">10 rows</SelectItem>
-                              <SelectItem value="20">20 rows</SelectItem>
-                              <SelectItem value="50">50 rows</SelectItem>
-                              <SelectItem value="100">100 rows</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="max-rows">Max Data Rows</Label>
+                        <Select
+                          value={String(customOptions.maxDataRows || 20)}
+                          onValueChange={(value) =>
+                            setCustomOptions({ ...customOptions, maxDataRows: Number(value) })
+                          }
+                        >
+                          <SelectTrigger id="max-rows">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="0">None</SelectItem>
+                            <SelectItem value="10">10 rows</SelectItem>
+                            <SelectItem value="20">20 rows</SelectItem>
+                            <SelectItem value="50">50 rows</SelectItem>
+                            <SelectItem value="100">100 rows</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
                     </Card>
                   </div>
