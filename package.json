@@ -15,6 +15,7 @@
     "@langchain/langgraph": "^0.2.74",
     "@langchain/openai": "^0.5.11",
     "@mendable/firecrawl-js": "^1.25.1",
+    "@modelcontextprotocol/sdk": "^1.24.3",
     "@radix-ui/react-accordion": "^1.2.10",
     "@radix-ui/react-alert-dialog": "^1.1.13",
     "@radix-ui/react-aspect-ratio": "^1.1.7",
