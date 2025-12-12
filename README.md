@@ -26,13 +26,79 @@ Turn a simple contact list into a rich dataset with company profiles, funding da
 
 The Workbench provides a spreadsheet-like interface for working with your enrichment sessions:
 
-- **Session Browser** - View all past enrichment sessions with metadata
+### Features
+
+- **Session Browser** - View all past enrichment sessions with metadata (row count, field count, date created)
 - **Inline Editing** - Click any cell to edit directly, just like Excel
-- **Confidence Scores** - See AI confidence for each enriched field
-- **Add/Delete Rows** - Manage your data iteratively
-- **Continue Enrichment** - Resume enrichment on existing sessions
+- **Confidence Scores** - See AI confidence ratings for each enriched field
+- **Source Tracking** - View which URLs were used to enrich each cell
+- **Add/Delete Rows** - Manage your data iteratively without re-uploading CSVs
+- **Persistent Changes** - Save modifications back to the database
 - **Export Options** - Download as CSV or JSON at any time
-- **Auto-save** - Changes are tracked and can be saved
+- **Real-time Progress** - Watch enrichment happen row-by-row with live status updates
+
+### Enrichment Orchestration
+
+The Workbench includes a comprehensive enrichment orchestration system with three powerful modes:
+
+#### 1. Manual Run
+- **Row Selection** - Choose specific rows to enrich or run entire session
+- **Agent Mapping** - Map specific agents to columns (e.g., "Company Agent" → "company_name")
+- **Mustache Variables** - Reference other cells in prompts: `{{company_name}}`, `{{row.email}}`
+- **Immediate Execution** - Run enrichment on-demand with custom settings
+- **Progress Tracking** - Real-time updates showing current row and completion status
+
+#### 2. Automation Rules
+Create sophisticated auto-enrichment workflows:
+
+- **Trigger Types**:
+  - **Manual** - Run when user clicks "Execute"
+  - **Auto** - Run automatically when rule conditions are met
+  - **onChange** - Trigger when specific cells are modified
+  - **Scheduled** - Run periodically (every N minutes/hours/days)
+
+- **Conditional Execution**:
+  - Field comparisons: `company_name is not empty`
+  - Multiple conditions with AND/OR logic
+  - Cell state checks: `funding_data is empty`
+  - Dynamic cross-row references
+
+- **Prompt Templates**:
+  - Use mustache variables: `Enrich {{company_name}} from {{website}}`
+  - Reference multiple columns: `Research {{first_name}} {{last_name}} at {{company}}`
+  - Dynamic context injection from other cells
+
+#### 3. Test & Debug
+- **Test Mode** - Preview enrichment without saving (dry run)
+- **Prompt Versioning** - Track and manage prompt template changes
+- **Cell Reference Preview** - See how mustache variables resolve before running
+- **Agent Response Testing** - Validate agent outputs against expected data
+- **Confidence Threshold Testing** - Adjust quality filters before production runs
+
+### Example Workflows
+
+**Auto-enrich companies when website is added:**
+```
+Trigger: onChange (website field)
+Condition: company_name is empty
+Agent: Company Agent → company_name
+Template: "Research {{website}} and extract company name"
+```
+
+**Scheduled funding updates:**
+```
+Trigger: scheduled (every 7 days)
+Agent: Funding Agent → funding_amount, last_round
+Template: "Get latest funding for {{company_name}}"
+```
+
+**Conditional leadership enrichment:**
+```
+Trigger: auto
+Condition: company_name is not empty AND ceo is empty
+Agent: People Agent → ceo, cto, founder
+Template: "Find leadership team at {{company_name}}"
+```
 
 Access the Workbench from the main navigation or at `/workbench`.
 

@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import { EnrichmentOrchestrator, EnrichmentRule } from "./enrichment-orchestrator";
 
 interface WorkbenchGridProps {
   sessionId: string;
@@ -38,6 +39,11 @@ export function WorkbenchGrid({ sessionId }: WorkbenchGridProps) {
   const [editValue, setEditValue] = useState("");
   const [isEnriching, setIsEnriching] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+  const [enrichmentProgress, setEnrichmentProgress] = useState<{
+    total: number;
+    completed: number;
+    currentRow?: number;
+  }>({ total: 0, completed: 0 });
 
   useEffect(() => {
     loadSessionData();
@@ -139,12 +145,120 @@ export function WorkbenchGrid({ sessionId }: WorkbenchGridProps) {
   };
 
   const handleSave = async () => {
+    if (!sessionId) {
+      toast.error("No session ID found");
+      return;
+    }
+
     try {
-      // TODO: Implement save API endpoint
-      toast.success("Changes saved");
+      const response = await fetch(`/api/sessions/${sessionId}/save`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ data, columns })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save session');
+      }
+
+      const result = await response.json();
+      console.log('Session saved:', result);
+      toast.success("Changes saved successfully");
       setHasChanges(false);
     } catch (error) {
+      console.error('Error saving session:', error);
       toast.error("Failed to save changes");
+    }
+  };
+
+  const handleEnrichment = async (rules: EnrichmentRule[], selectedRows?: number[]) => {
+    setIsEnriching(true);
+    const rowsToEnrich = selectedRows || data.map((_, idx) => idx);
+    setEnrichmentProgress({ total: rowsToEnrich.length, completed: 0 });
+
+    try {
+      // Extract enrichment fields from the session
+      const fieldsToEnrich = enrichmentFields.map(field => ({
+        name: field,
+        displayName: field,
+        description: `AI-generated ${field}`,
+        type: 'string' as const,
+        required: false
+      }));
+
+      // Get email column (assuming first column or look for 'email')
+      const emailColumn = columns.find(c => c.toLowerCase().includes('email')) || columns[0];
+
+      for (let i = 0; i < rowsToEnrich.length; i++) {
+        const rowIndex = rowsToEnrich[i];
+        const row = data[rowIndex];
+        
+        setEnrichmentProgress({ total: rowsToEnrich.length, completed: i, currentRow: rowIndex });
+
+        // Create enrichment request
+        const response = await fetch('/api/enrich', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            rows: [row],
+            fields: fieldsToEnrich,
+            emailColumn,
+            sessionId,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`Enrichment failed for row ${rowIndex}`);
+        }
+
+        // Parse SSE stream
+        const reader = response.body?.getReader();
+        const decoder = new TextDecoder();
+
+        if (reader) {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            const chunk = decoder.decode(value);
+            const lines = chunk.split('\n');
+
+            for (const line of lines) {
+              if (line.startsWith('data: ')) {
+                try {
+                  const eventData = JSON.parse(line.slice(6));
+                  
+                  if (eventData.type === 'row_complete') {
+                    // Update the row with enriched data
+                    const newData = [...data];
+                    Object.entries(eventData.data.enrichments).forEach(([field, enrichment]: [string, any]) => {
+                      newData[rowIndex][`enrichment_${field}`] = {
+                        value: enrichment.value,
+                        confidence: enrichment.confidence,
+                        sources: enrichment.sources,
+                      };
+                    });
+                    setData(newData);
+                    setHasChanges(true);
+                  }
+                } catch (e) {
+                  console.error('Error parsing SSE:', e);
+                }
+              }
+            }
+          }
+        }
+      }
+
+      setEnrichmentProgress({ total: rowsToEnrich.length, completed: rowsToEnrich.length });
+      toast.success(`Enriched ${rowsToEnrich.length} rows successfully`);
+    } catch (error) {
+      console.error('Enrichment error:', error);
+      toast.error("Enrichment failed");
+    } finally {
+      setIsEnriching(false);
     }
   };
 
@@ -217,6 +331,13 @@ export function WorkbenchGrid({ sessionId }: WorkbenchGridProps) {
             {enrichmentFields.length > 0 && (
               <Badge variant="default">{enrichmentFields.length} enriched fields</Badge>
             )}
+            {isEnriching && (
+              <Badge variant="outline" className="gap-2">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                Enriching {enrichmentProgress.completed}/{enrichmentProgress.total}
+                {enrichmentProgress.currentRow !== undefined && ` (row ${enrichmentProgress.currentRow + 1})`}
+              </Badge>
+            )}
           </div>
           <div className="flex items-center gap-2">
             {hasChanges && (
@@ -225,6 +346,12 @@ export function WorkbenchGrid({ sessionId }: WorkbenchGridProps) {
                 Save Changes
               </Button>
             )}
+            <EnrichmentOrchestrator
+              sessionId={sessionId}
+              columns={columns}
+              enrichmentFields={enrichmentFields}
+              onEnrich={handleEnrichment}
+            />
             <Button onClick={handleAddRow} size="sm" variant="outline" className="gap-2">
               <Plus className="h-4 w-4" />
               Add Row
