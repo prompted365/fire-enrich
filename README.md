@@ -20,6 +20,21 @@ Turn a simple contact list into a rich dataset with company profiles, funding da
 - **📤 Export** - Download results as CSV or JSON
 - **🔌 MCP Support** - Model Context Protocol for external agent integrations
 - **🎯 Agent Toggle** - Smart recommendations based on your selected fields
+- **📊 Workbench** - Excel-inspired interface for managing and editing enriched data
+
+## Workbench - Excel-Inspired Data Management
+
+The Workbench provides a spreadsheet-like interface for working with your enrichment sessions:
+
+- **Session Browser** - View all past enrichment sessions with metadata
+- **Inline Editing** - Click any cell to edit directly, just like Excel
+- **Confidence Scores** - See AI confidence for each enriched field
+- **Add/Delete Rows** - Manage your data iteratively
+- **Continue Enrichment** - Resume enrichment on existing sessions
+- **Export Options** - Download as CSV or JSON at any time
+- **Auto-save** - Changes are tracked and can be saved
+
+Access the Workbench from the main navigation or at `/workbench`.
 
 ## Technologies
 
